@@ -394,29 +394,29 @@ func cachedGetPlayerOwnedGames(ctx context.Context, client *steam.Client, userID
 	return ret, err
 }
 
-func cachedAppList(ctx context.Context, client *steam.Client) (*steam.AppList, error) {
-	// Check the cache to see if we've already scraped
-	filename := filepath.Join("_cache", fmt.Sprintf("apps.json"))
-	f, err := os.Open(filename)
-	if err == nil {
-		ret := &steam.AppList{}
-		err = json.NewDecoder(f).Decode(ret)
-		return ret, err
-	}
+// func cachedAppList(ctx context.Context, client *steam.Client) (*steam.AppList, error) {
+// 	// Check the cache to see if we've already scraped
+// 	filename := filepath.Join("_cache", fmt.Sprintf("apps.json"))
+// 	f, err := os.Open(filename)
+// 	if err == nil {
+// 		ret := &steam.AppList{}
+// 		err = json.NewDecoder(f).Decode(ret)
+// 		return ret, err
+// 	}
 
-	apps, err := client.ISteamApps.GetAppList(ctx)
-	if err != nil {
-		return nil, err
-	}
+// 	apps, err := client.ISteamApps.GetAppList(ctx)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	f, err = os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
+// 	f, err = os.Create(filename)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	enc := json.NewEncoder(f)
-	enc.SetIndent("", "  ")
-	err = enc.Encode(apps)
+// 	enc := json.NewEncoder(f)
+// 	enc.SetIndent("", "  ")
+// 	err = enc.Encode(apps)
 
-	return apps, err
-}
+// 	return apps, err
+// }
