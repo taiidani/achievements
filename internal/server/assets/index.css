@@ -56,10 +56,6 @@ hr {
     color: gray;
 }
 
-#user img {
-    {{/* max-height: 5em; */}}
-}
-
 footer {
     background-color: rgba(var(--bs-tertiary-bg-rgb), var(--bs-bg-opacity));
     color: var(--bs-body-color);
