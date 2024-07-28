@@ -1,0 +1,54 @@
+name: main
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+    outputs:
+      filename: ${{ steps.filename.outputs.filename }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: build
+        run: go build -o ./app
+
+      - name: filename
+        id: filename
+        run: echo "filename=app-$(date +'%Y.%m.%d')-${GITHUB_SHA::6}_linux_amd64.tgz" >> "$GITHUB_OUTPUT"
+
+      - name: package
+        run: tar cvzf ./${{ steps.filename.outputs.filename }} app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "artifact"
+          path: ./${{ steps.filename.outputs.filename }}
+          if-no-files-found: error
+          retention-days: 1
+
+  upload:
+    uses: taiidani/deploy-action/.github/workflows/publish-binary.yml@main
+    needs: build
+    with:
+      filename: "${{ needs.build.outputs.filename }}"
+
+  deploy:
+    uses: taiidani/deploy-action/.github/workflows/nomad.yml@main
+    needs: upload
+    with:
+      artifact: "${{ needs.upload.outputs.artifact }}"
+      jobspec: achievments.nomad
+      url: https://achievements.taiidani.com

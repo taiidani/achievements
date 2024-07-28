@@ -1,0 +1,44 @@
+name: test
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Test
+        run: go test -race -covermode=atomic -cover ./...
+
+      - name: Build
+        run: go build -o app
+
+  go-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: "v1.54.0"
