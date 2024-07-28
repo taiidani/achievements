@@ -1,0 +1,66 @@
+:root {
+    --text-color: #eee;
+    --default-bg-color: rgba(22, 33, 58);
+    --bs-secondary-color: #eee;
+}
+
+body {
+    background-color: var(--default-bg-color);
+    color: var(--text-color);
+}
+
+a {
+    color: var(--text-color);
+    text-decoration: underline;
+}
+
+[data-bs-theme="dark"] {
+    --bs-tertiary-bg-rgb: 18, 22, 28;
+}
+
+nav img {
+    height: 1.5em;
+}
+
+hr {
+    border-color: var(--text-color);
+}
+
+.game img {
+    height: 4em;
+}
+
+.game table {
+    outline: 2px solid white;
+    width: 60em;
+}
+
+.game tr {
+    background-color: rgba(14, 19, 26);
+    margin: 1em 0;
+    border-bottom: 1px solid white;
+}
+
+.game thead th {
+    text-wrap: nowrap;
+}
+
+.game th,
+.game td {
+    padding: 1em;
+}
+
+.game p.desc {
+    font-weight: lighter;
+    font-style: italic;
+    color: gray;
+}
+
+#user img {
+    {{/* max-height: 5em; */}}
+}
+
+footer {
+    background-color: rgba(var(--bs-tertiary-bg-rgb), var(--bs-bg-opacity));
+    color: var(--bs-body-color);
+}

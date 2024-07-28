@@ -1,0 +1,3 @@
+[env]
+# Place a STEAM_KEY into this file
+_.file = ".env"
