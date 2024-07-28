@@ -1,10 +1,12 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 
 	"github.com/taiidani/achievements/internal/data"
+	"github.com/taiidani/achievements/internal/steam"
 )
 
 type indexBag struct {
@@ -23,8 +25,20 @@ func indexHandler(resp http.ResponseWriter, req *http.Request) {
 		// My userID is 76561197970932835
 		user, err := data.GetUser(req.Context(), bag.UserID)
 		if err != nil {
-			errorResponse(resp, http.StatusNotFound, err)
-			return
+			// Attempt to resolve the user's vanity URL into an ID
+			client := steam.NewClient()
+			vanity, err := client.ISteamUser.ResolveVanityURL(req.Context(), bag.UserID)
+			if err != nil {
+				errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not resolve user id %q to a Steam User ID or Vanity URL", bag.UserID))
+				return
+			}
+
+			bag.UserID = vanity.Response.SteamID
+			user, err = data.GetUser(req.Context(), bag.UserID)
+			if err != nil {
+				errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not resolve user id %q to a Steam User ID or Vanity URL", bag.UserID))
+				return
+			}
 		}
 		bag.User = user
 

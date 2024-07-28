@@ -22,11 +22,9 @@ func newISteamUserService(service *service) *iSteamUserService {
 }
 
 type PlayerSummaries struct {
-	Response PlayerSummariesResponse `json:"response"`
-}
-
-type PlayerSummariesResponse struct {
-	Players []Player `json:"players"`
+	Response struct {
+		Players []Player `json:"players"`
+	} `json:"response"`
 }
 
 type Player struct {
@@ -74,6 +72,45 @@ func (c *iSteamUserService) GetPlayerSummaries(ctx context.Context, userID ...st
 	// slog.DebugContext(ctx, "Response received", "body", respBody.String())
 
 	ret := &PlayerSummaries{}
+	err = json.Unmarshal([]byte(respBody.String()), ret)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return ret, err
+}
+
+type VanityURLResponse struct {
+	Response struct {
+		SteamID string `json:"steamid"`
+		Success uint64 `json:"success"`
+	} `json:"response"`
+}
+
+func (c *iSteamUserService) ResolveVanityURL(ctx context.Context, vanityURL string) (*VanityURLResponse, error) {
+	query := url.Values{}
+	query.Add("vanityurl", vanityURL)
+	target := c.url("ISteamUser", "ResolveVanityURL", apiVersion01, query)
+	slog.DebugContext(ctx, "URL formed", "url", target.String())
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not format request: %w", err)
+	}
+
+	resp, err := c.client.Do(req)
+	if resp.Close {
+		defer resp.Body.Close()
+	}
+	if err := c.httpError(resp, err); err != nil {
+		return nil, fmt.Errorf("request error: %w", err)
+	}
+
+	respBody := &strings.Builder{}
+	_, _ = io.Copy(respBody, resp.Body)
+	// slog.DebugContext(ctx, "Response received", "body", respBody.String())
+
+	ret := &VanityURLResponse{}
 	err = json.Unmarshal([]byte(respBody.String()), ret)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse response: %w", err)
