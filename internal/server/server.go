@@ -17,8 +17,8 @@ type Server struct {
 //go:embed templates
 var templates embed.FS
 
-// devMode can be toggled to pull rendered files from the filesystem or the embedded FS.
-var devMode = false
+// DevMode can be toggled to pull rendered files from the filesystem or the embedded FS.
+var DevMode = os.Getenv("DEV") == "true"
 
 func NewServer() *Server {
 	mux := http.NewServeMux()
@@ -51,7 +51,7 @@ func renderHtml(writer http.ResponseWriter, code int, file string, data any) {
 
 	var t *template.Template
 	var err error
-	if devMode {
+	if DevMode {
 		t, err = template.ParseGlob("internal/server/templates/**")
 	} else {
 		t, err = template.ParseFS(templates, "templates/**")
@@ -61,7 +61,7 @@ func renderHtml(writer http.ResponseWriter, code int, file string, data any) {
 		return
 	}
 
-	log.Debug("Rendering file")
+	log.Debug("Rendering file", "dev", DevMode)
 	writer.WriteHeader(code)
 	err = t.ExecuteTemplate(writer, file, data)
 	if err != nil {

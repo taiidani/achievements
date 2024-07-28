@@ -31,7 +31,7 @@ func main() {
 func serve(ctx context.Context) error {
 	srv := server.NewServer()
 	go func() {
-		slog.Info("Server starting")
+		slog.Info("Server starting", "dev", server.DevMode)
 		err := srv.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			slog.Error("Unclean server shutdown encountered", "error", err)
