@@ -2,9 +2,12 @@ package server
 
 import (
 	"embed"
+	"fmt"
 	"html/template"
+	"log"
 	"log/slog"
 	"net/http"
+	"os"
 )
 
 type Server struct {
@@ -20,9 +23,14 @@ var devMode = false
 func NewServer() *Server {
 	mux := http.NewServeMux()
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("Required PORT environment variable not present")
+	}
+
 	srv := &Server{
 		Server: &http.Server{
-			Addr:    "0.0.0.0:80",
+			Addr:    fmt.Sprintf(":%s", port),
 			Handler: mux,
 		},
 	}
