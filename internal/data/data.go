@@ -104,8 +104,10 @@ func GetUser(ctx context.Context, userID string) (User, error) {
 		Name:        user.PersonaName,
 		ProfileURL:  user.ProfileURL,
 		AvatarURL:   user.AvatarFull,
-		LastLogoff:  time.Unix(int64(user.LastLogoff), 0),
 		TimeCreated: time.Unix(int64(user.TimeCreated), 0),
+	}
+	if user.LastLogoff > 0 {
+		newData.LastLogoff = time.Unix(int64(user.LastLogoff), 0)
 	}
 
 	return newData, nil
@@ -131,9 +133,11 @@ func GetGames(ctx context.Context, userID string) ([]Game, error) {
 			DisplayName:     game.Name,
 			Achievements:    []Achievement{},
 			PlaytimeForever: time.Duration(game.PlaytimeForever) * time.Minute,
-			LastPlayed:      time.Unix(int64(game.RTimeLastPlayed), 0),
 		}
-		newData.LastPlayedSince = time.Since(newData.LastPlayed)
+		if game.RTimeLastPlayed > 0 {
+			newData.LastPlayed = time.Unix(int64(game.RTimeLastPlayed), 0)
+			newData.LastPlayedSince = time.Since(newData.LastPlayed)
+		}
 
 		ret = append(ret, newData)
 	}
