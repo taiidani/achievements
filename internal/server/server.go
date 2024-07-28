@@ -22,7 +22,7 @@ func NewServer() *Server {
 
 	srv := &Server{
 		Server: &http.Server{
-			Addr:    ":http",
+			Addr:    "0.0.0.0:80",
 			Handler: mux,
 		},
 	}
