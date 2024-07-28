@@ -47,6 +47,11 @@ type User struct {
 
 var Data = map[string]*CachedData{}
 
+func init() {
+	// Ensure the cache directory exists
+	_ = os.MkdirAll("_cache", os.ModeDir)
+}
+
 func RefreshData(ctx context.Context, userID string) error {
 	log := slog.With("user", userID)
 
