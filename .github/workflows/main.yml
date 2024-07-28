@@ -50,5 +50,5 @@ jobs:
     needs: upload
     with:
       artifact: "${{ needs.upload.outputs.artifact }}"
-      jobspec: achievments.nomad
+      jobspec: achievements.nomad
       url: https://achievements.taiidani.com
