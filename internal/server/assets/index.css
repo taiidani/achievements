@@ -30,24 +30,8 @@ hr {
     height: 4em;
 }
 
-.game table {
-    outline: 2px solid white;
-    width: 60em;
-}
-
-.game tr {
-    background-color: rgba(14, 19, 26);
-    margin: 1em 0;
-    border-bottom: 1px solid white;
-}
-
 .game thead th {
     text-wrap: nowrap;
-}
-
-.game th,
-.game td {
-    padding: 1em;
 }
 
 .game p.desc {

@@ -17,13 +17,16 @@ type CachedData struct {
 }
 
 type Game struct {
-	ID              uint64
-	DisplayName     string
-	Icon            string
-	Achievements    []Achievement
-	PlaytimeForever time.Duration
-	LastPlayed      time.Time
-	LastPlayedSince time.Duration
+	ID                            uint64
+	DisplayName                   string
+	Icon                          string
+	Achievements                  []Achievement
+	AchievementTotalCount         int
+	AchievementUnlockedCount      int
+	AchievementUnlockedPercentage int
+	PlaytimeForever               time.Duration
+	LastPlayed                    time.Time
+	LastPlayedSince               time.Duration
 }
 
 type Achievement struct {
@@ -114,9 +117,10 @@ func GetUser(ctx context.Context, userID string) (User, error) {
 }
 
 func GetGames(ctx context.Context, userID string) ([]Game, error) {
+	log := slog.With("user-id", userID)
 	client := steam.NewClient()
 
-	slog.Debug("Retrieving user owned games")
+	log.Debug("Retrieving user owned games")
 	steamGames, err := cachedGetPlayerOwnedGames(ctx, client, userID)
 	if err != nil {
 		return nil, fmt.Errorf("could not query for player %q games: %w", userID, err)
@@ -124,6 +128,7 @@ func GetGames(ctx context.Context, userID string) ([]Game, error) {
 
 	ret := []Game{}
 	for _, game := range steamGames.Response.Games {
+		log := log.With("game-id", game.AppID, "title", game.Name)
 		if game.PlaytimeForever == 0 {
 			continue
 		}
@@ -138,6 +143,25 @@ func GetGames(ctx context.Context, userID string) ([]Game, error) {
 			newData.LastPlayed = time.Unix(int64(game.RTimeLastPlayed), 0)
 			newData.LastPlayedSince = time.Since(newData.LastPlayed)
 		}
+
+		playerAchievements, err := cachedGetPlayerAchievements(ctx, client, userID, game.AppID)
+		if err != nil {
+			log.Warn("Unable to get player achievements for game. Skipping game.", "err", err)
+			continue
+		} else if len(playerAchievements.PlayerStats.Achievements) == 0 {
+			log.Debug("Game has no achievements. Skipping game")
+			continue
+		}
+
+		newData.AchievementTotalCount = len(playerAchievements.PlayerStats.Achievements)
+		newData.AchievementUnlockedCount = 0
+		for _, achievement := range playerAchievements.PlayerStats.Achievements {
+			if achievement.Achieved > 0 {
+				newData.AchievementUnlockedCount++
+			}
+		}
+
+		newData.AchievementUnlockedPercentage = int((float64(newData.AchievementUnlockedCount) / float64(newData.AchievementTotalCount)) * 100)
 
 		ret = append(ret, newData)
 	}
@@ -179,6 +203,9 @@ func GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
 	schema, err := cachedGetSchemaForGame(ctx, client, steamGame.AppID)
 	if err != nil {
 		return newData, fmt.Errorf("unable to retrieve game schema: %w", err)
+	} else if len(schema.Game.AvailableGameStats.Achievements) == 0 {
+		log.Debug("Game has no achievements. Skipping.")
+		return newData, nil
 	}
 
 	log.Debug("Retrieving global achievement percentages")
@@ -198,6 +225,8 @@ func GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
 			},
 		}
 	}
+	newData.AchievementTotalCount = len(playerAchievements.PlayerStats.Achievements)
+	newData.AchievementUnlockedCount = 0
 
 	for _, gameAchievement := range schema.Game.AvailableGameStats.Achievements {
 		bagAchievement := Achievement{
@@ -227,6 +256,9 @@ func GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
 				}
 			}
 		}
+		if bagAchievement.Achieved {
+			newData.AchievementUnlockedCount++
+		}
 
 		bagAchievement.Icon = gameAchievement.Icon
 		if !bagAchievement.Achieved {
@@ -235,6 +267,8 @@ func GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
 
 		newData.Achievements = append(newData.Achievements, bagAchievement)
 	}
+
+	newData.AchievementUnlockedPercentage = int((float64(newData.AchievementUnlockedCount) / float64(newData.AchievementTotalCount)) * 100)
 
 	return newData, nil
 }
@@ -360,7 +394,11 @@ func cachedGetPlayerAchievements(ctx context.Context, client *steam.Client, user
 	// Nope! Build the cache
 	ret, err := client.ISteamUserStats.GetPlayerAchievements(ctx, userID, appID)
 	if err != nil {
-		return nil, err
+		// This will issue a Bad Request if no achievements exist for it
+		// For now, emit an empty result so that we can cache the zero value
+		ret = &steam.PlayerAchievements{
+			PlayerStats: steam.PlayerStats{},
+		}
 	}
 
 	f, err = os.Create(filename)

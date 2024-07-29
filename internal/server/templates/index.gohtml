@@ -55,6 +55,7 @@
                 <thead>
                     <tr>
                         <th>Name</th>
+                        <th>Achievement Progress</th>
                         <th>Time Played</th>
                         <th>Last Played</th>
                     </tr>
@@ -64,6 +65,11 @@
                     {{ range $i, $el := .Games }}
                     <tr>
                         <td><a href="/game?user-id={{$userID}}&game-id={{$el.ID}}">{{$el.DisplayName}}</a></td>
+                        <td>
+                            <div class="progress" role="progressbar" aria-label="Default striped example" aria-valuenow="{{ $el.AchievementUnlockedCount }}" aria-valuemin="0" aria-valuemax="{{ $el.AchievementTotalCount }}">
+                                <div class="progress-bar progress-bar-striped" style="width: {{ $el.AchievementUnlockedPercentage }}%"></div>
+                            </div>
+                        </td>
                         <td>{{ $el.PlaytimeForever }}</td>
                         <td>{{ if $el.LastPlayed.IsZero }}Unknown{{ else }}<span title="{{ $el.LastPlayedSince }}">{{ $el.LastPlayed.Format "2006-01-02" }}</span>{{ end }}</td>
                     </tr>

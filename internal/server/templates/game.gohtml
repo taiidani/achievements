@@ -14,8 +14,14 @@
     <div class="row">
         <div id="game" class="col-md-12" data-id="{{.Game.ID}}">
             <h1>{{.Game.DisplayName}}</h1>
+            <p>
+                <div class="progress" role="progressbar" aria-label="Default striped example" aria-valuenow="{{ .Game.AchievementUnlockedCount }}" aria-valuemin="0" aria-valuemax="{{ .Game.AchievementTotalCount }}">
+                    <div class="progress-bar progress-bar-striped" style="width: {{ .Game.AchievementUnlockedPercentage }}%">{{ if gt .Game.AchievementUnlockedPercentage 10 }}{{ .Game.AchievementUnlockedPercentage }}% Complete{{ end }}</div>
+                </div>
+            </p>
+
             <div class="game">
-                <table class="table table-dark table-striped">
+                <table class="table table-dark table-hover table-striped">
                     <thead>
                         <tr>
                             <th></th>
@@ -24,7 +30,7 @@
                             <th>Global Percentage</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="table-group-divider">
                     {{ range $i, $el := .Game.Achievements }}
                         <tr>
                             <td>
