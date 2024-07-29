@@ -29,14 +29,14 @@ func indexHandler(resp http.ResponseWriter, req *http.Request) {
 			client := steam.NewClient()
 			vanity, err := client.ISteamUser.ResolveVanityURL(req.Context(), bag.UserID)
 			if err != nil {
-				errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not resolve user id %q to a Steam User ID or Vanity URL", bag.UserID))
+				errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not resolve user id %q to a Steam User ID or Vanity URL: %w", bag.UserID, err))
 				return
 			}
 
 			bag.UserID = vanity.Response.SteamID
 			user, err = data.GetUser(req.Context(), bag.UserID)
 			if err != nil {
-				errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not resolve user id %q to a Steam User ID or Vanity URL", bag.UserID))
+				errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not get user data for %q: %w", bag.UserID, err))
 				return
 			}
 		}
@@ -55,5 +55,10 @@ func indexHandler(resp http.ResponseWriter, req *http.Request) {
 		return bag.Games[i].DisplayName < bag.Games[j].DisplayName
 	})
 
-	renderHtml(resp, http.StatusOK, "index.gohtml", bag)
+	template := "index.gohtml"
+	if req.Header.Get("HX-Request") != "" {
+		template = "index-body.gohtml"
+	}
+
+	renderHtml(resp, http.StatusOK, template, bag)
 }

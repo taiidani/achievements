@@ -9,6 +9,20 @@ body {
     color: var(--text-color);
 }
 
+img.htmx-indicator {
+    height: 2em;
+}
+
+.htmx-indicator{
+    display: none;
+}
+.htmx-request .htmx-indicator{
+    display: inline;
+}
+.htmx-request.htmx-indicator{
+    display: inline;
+}
+
 a {
     color: var(--text-color);
     text-decoration: underline;

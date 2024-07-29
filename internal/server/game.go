@@ -32,5 +32,10 @@ func gameHandler(resp http.ResponseWriter, req *http.Request) {
 		bag.Game = game
 	}
 
-	renderHtml(resp, http.StatusOK, "game.gohtml", bag)
+	template := "game.gohtml"
+	if req.Header.Get("HX-Request") != "" {
+		template = "game-body.gohtml"
+	}
+
+	renderHtml(resp, http.StatusOK, template, bag)
 }

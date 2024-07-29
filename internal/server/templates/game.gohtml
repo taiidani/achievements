@@ -1,66 +1,7 @@
 {{ template "header.gohtml" . }}
 
 <div id="app" class="container">
-    <div class="row">
-        <div class="col-md-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="/?user-id={{.UserID}}">Home</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Game</li>
-                </ol>
-            </nav>
-        </div>
-    </div>
-    <div class="row">
-        <div id="game" class="col-md-12" data-id="{{.Game.ID}}">
-            <h1>{{.Game.DisplayName}}</h1>
-            <p>
-                <div class="progress" role="progressbar" aria-label="Default striped example" aria-valuenow="{{ .Game.AchievementUnlockedCount }}" aria-valuemin="0" aria-valuemax="{{ .Game.AchievementTotalCount }}">
-                    <div class="progress-bar progress-bar-striped" style="width: {{ .Game.AchievementUnlockedPercentage }}%">{{ if gt .Game.AchievementUnlockedPercentage 10 }}{{ .Game.AchievementUnlockedPercentage }}% Complete{{ end }}</div>
-                </div>
-            </p>
-
-            <div class="game">
-                <table class="table table-dark table-hover table-striped">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>Name</th>
-                            <th>Unlocked On</th>
-                            <th>Global Percentage</th>
-                        </tr>
-                    </thead>
-                    <tbody class="table-group-divider">
-                    {{ range $i, $el := .Game.Achievements }}
-                        <tr>
-                            <td>
-                                <img alt="{{$el.Name}}" src="{{$el.Icon}}" />
-                            </td>
-                            <td>
-                                <p>{{$el.Name}}</p>
-                                {{ if $el.Hidden }}
-                                <p class="desc">Description intentionally hidden.</p>
-                                {{ else if not $el.Description }}
-                                <p class="desc">Description not found.</p>
-                                {{ else }}
-                                <p class="desc">{{$el.Description}}</p>
-                                {{ end }}
-                            </td>
-                            <td>
-                                {{ if $el.UnlockedOn }}
-                                <p>{{$el.UnlockedOn.Format "2006-01-02" }}</p>
-                                {{ end }}
-                            </td>
-                            <td>
-                                <p>{{ printf "%.02f%%" $el.GlobalPercentage}}</p>
-                            </td>
-                        </tr>
-                    {{ end }}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    {{ template "game-body.gohtml" . }}
 </div>
 
 {{ template "footer.gohtml" . }}

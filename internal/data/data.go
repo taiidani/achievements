@@ -128,40 +128,14 @@ func GetGames(ctx context.Context, userID string) ([]Game, error) {
 
 	ret := []Game{}
 	for _, game := range steamGames.Response.Games {
-		log := log.With("game-id", game.AppID, "title", game.Name)
 		if game.PlaytimeForever == 0 {
 			continue
 		}
 
 		newData := Game{
-			ID:              game.AppID,
-			DisplayName:     game.Name,
-			Achievements:    []Achievement{},
-			PlaytimeForever: time.Duration(game.PlaytimeForever) * time.Minute,
+			ID:          game.AppID,
+			DisplayName: game.Name,
 		}
-		if game.RTimeLastPlayed > 0 {
-			newData.LastPlayed = time.Unix(int64(game.RTimeLastPlayed), 0)
-			newData.LastPlayedSince = time.Since(newData.LastPlayed)
-		}
-
-		playerAchievements, err := cachedGetPlayerAchievements(ctx, client, userID, game.AppID)
-		if err != nil {
-			log.Warn("Unable to get player achievements for game. Skipping game.", "err", err)
-			continue
-		} else if len(playerAchievements.PlayerStats.Achievements) == 0 {
-			log.Debug("Game has no achievements. Skipping game")
-			continue
-		}
-
-		newData.AchievementTotalCount = len(playerAchievements.PlayerStats.Achievements)
-		newData.AchievementUnlockedCount = 0
-		for _, achievement := range playerAchievements.PlayerStats.Achievements {
-			if achievement.Achieved > 0 {
-				newData.AchievementUnlockedCount++
-			}
-		}
-
-		newData.AchievementUnlockedPercentage = int((float64(newData.AchievementUnlockedCount) / float64(newData.AchievementTotalCount)) * 100)
 
 		ret = append(ret, newData)
 	}
@@ -189,14 +163,20 @@ func GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
 
 	log = log.With("game-name", steamGame.Name)
 	newData := Game{
-		ID:           steamGame.AppID,
-		DisplayName:  steamGame.Name,
-		Achievements: []Achievement{},
+		ID:              steamGame.AppID,
+		DisplayName:     steamGame.Name,
+		Achievements:    []Achievement{},
+		PlaytimeForever: time.Duration(steamGame.PlaytimeForever) * time.Minute,
 	}
 
 	if steamGame.PlaytimeForever == 0 {
 		log.Debug("Skipping unplayed game")
 		return newData, nil
+	}
+
+	if steamGame.RTimeLastPlayed > 0 {
+		newData.LastPlayed = time.Unix(int64(steamGame.RTimeLastPlayed), 0)
+		newData.LastPlayedSince = time.Since(newData.LastPlayed)
 	}
 
 	log.Debug("Retrieving schema for game")

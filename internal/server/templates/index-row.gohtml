@@ -1,0 +1,12 @@
+<td hx-get="/game?user-id={{.UserID}}&game-id={{.GameID}}" hx-target="#app">
+    <a href="/game?user-id={{.UserID}}&game-id={{.GameID}}">{{$.Game.DisplayName}}</a>
+    {{- if eq .Game.AchievementUnlockedPercentage 100 }} 🏆{{end}}
+    <img class="htmx-indicator" src="/assets/loading.svg" />
+</td>
+<td>
+    <div class="progress" role="progressbar" aria-label="Default striped example" aria-valuenow="{{ .Game.AchievementUnlockedCount }}" aria-valuemin="0" aria-valuemax="{{ .Game.AchievementTotalCount }}">
+        <div class="progress-bar progress-bar-striped" style="width: {{ .Game.AchievementUnlockedPercentage }}%"></div>
+    </div>
+</td>
+<td>{{ .Game.PlaytimeForever }}</td>
+<td>{{ if .Game.LastPlayed.IsZero }}Unknown{{ else }}<span title="{{ .Game.LastPlayedSince }}">{{ .Game.LastPlayed.Format "2006-01-02" }}</span>{{ end }}</td>

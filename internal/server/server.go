@@ -44,6 +44,7 @@ func (s *Server) addRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/game", gameHandler)
 	mux.HandleFunc("/about", aboutHandler)
 	mux.HandleFunc("/assets/*", assetsHandler)
+	mux.HandleFunc("/hx/game/row", hxGameRowHandler)
 }
 
 func renderHtml(writer http.ResponseWriter, code int, file string, data any) {
@@ -83,5 +84,6 @@ func errorResponse(writer http.ResponseWriter, code int, err error) {
 		Message: err,
 	}
 
+	slog.Error("Displaying error page", "error", err)
 	renderHtml(writer, code, "error.gohtml", data)
 }
