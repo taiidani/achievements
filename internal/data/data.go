@@ -52,7 +52,7 @@ var Data = map[string]*CachedData{}
 
 func init() {
 	// Ensure the cache directory exists
-	_ = os.MkdirAll("_cache", os.ModeDir)
+	_ = os.MkdirAll("_cache", 0777)
 }
 
 func RefreshData(ctx context.Context, userID string) error {
