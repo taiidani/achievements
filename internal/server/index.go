@@ -16,14 +16,14 @@ type indexBag struct {
 	Games  []data.Game
 }
 
-func indexHandler(resp http.ResponseWriter, req *http.Request) {
+func (s *Server) indexHandler(resp http.ResponseWriter, req *http.Request) {
 	bag := indexBag{}
 	bag.Page = "home"
 	bag.UserID = req.URL.Query().Get("user-id")
 
 	if bag.UserID != "" {
 		// My userID is 76561197970932835
-		user, err := data.GetUser(req.Context(), bag.UserID)
+		user, err := s.backend.GetUser(req.Context(), bag.UserID)
 		if err != nil {
 			// Attempt to resolve the user's vanity URL into an ID
 			client := steam.NewClient()
@@ -34,7 +34,7 @@ func indexHandler(resp http.ResponseWriter, req *http.Request) {
 			}
 
 			bag.UserID = vanity.Response.SteamID
-			user, err = data.GetUser(req.Context(), bag.UserID)
+			user, err = s.backend.GetUser(req.Context(), bag.UserID)
 			if err != nil {
 				errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not get user data for %q: %w", bag.UserID, err))
 				return
@@ -42,7 +42,7 @@ func indexHandler(resp http.ResponseWriter, req *http.Request) {
 		}
 		bag.User = user
 
-		games, err := data.GetGames(req.Context(), bag.UserID)
+		games, err := s.backend.GetGames(req.Context(), bag.UserID)
 		if err != nil {
 			errorResponse(resp, http.StatusNotFound, err)
 			return

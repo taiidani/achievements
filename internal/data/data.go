@@ -2,18 +2,23 @@ package data
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/taiidani/achievements/internal/steam"
 )
 
-type CachedData struct {
-	Games []Game
+type Data struct {
+	cache DataCache
+}
+
+type DataCache interface {
+	GetGlobalAchievementPercentagesForApp(ctx context.Context, client *steam.Client, appID uint64) (*steam.GlobalAchievementPercentages, error)
+	GetSchemaForGame(ctx context.Context, client *steam.Client, appID uint64) (*steam.GameSchema, error)
+	GetPlayerSummaries(ctx context.Context, client *steam.Client, userID string) (*steam.PlayerSummaries, error)
+	GetPlayerAchievements(ctx context.Context, client *steam.Client, userID string, appID uint64) (*steam.PlayerAchievements, error)
+	GetPlayerOwnedGames(ctx context.Context, client *steam.Client, userID string) (*steam.OwnedGames, error)
 }
 
 type Game struct {
@@ -48,51 +53,18 @@ type User struct {
 	TimeCreated time.Time
 }
 
-var Data = map[string]*CachedData{}
-
-func init() {
-	// Ensure the cache directory exists
-	_ = os.MkdirAll("_cache", 0777)
+func NewData(cache DataCache) *Data {
+	return &Data{
+		cache: cache,
+	}
 }
 
-func RefreshData(ctx context.Context, userID string) error {
-	log := slog.With("user", userID)
-
-	log.Info("Refreshing data")
-	start := time.Now()
-	defer func() {
-		log.Info("Refresh complete", "duration", time.Since(start))
-	}()
-
-	newData := &CachedData{}
-
-	client := steam.NewClient()
-
-	log.Debug("Retrieving user owned games")
-	steamGames, err := cachedGetPlayerOwnedGames(ctx, client, userID)
-	if err != nil {
-		return fmt.Errorf("could not query for player %q games: %w", userID, err)
-	}
-
-	for _, steamGame := range steamGames.Response.Games {
-		game, err := GetGame(ctx, userID, steamGame.AppID)
-		if err != nil {
-			return fmt.Errorf("could not refresh data for game %q: %w", steamGame.AppID, err)
-		}
-
-		newData.Games = append(newData.Games, game)
-	}
-
-	Data[userID] = newData
-	return nil
-}
-
-func GetUser(ctx context.Context, userID string) (User, error) {
+func (d *Data) GetUser(ctx context.Context, userID string) (User, error) {
 	log := slog.With("user", userID)
 	client := steam.NewClient()
 
 	log.Debug("Retrieving user")
-	playerSummaries, err := cachedGetPlayerSummaries(ctx, client, userID)
+	playerSummaries, err := d.cache.GetPlayerSummaries(ctx, client, userID)
 	if err != nil {
 		return User{}, fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}
@@ -116,12 +88,12 @@ func GetUser(ctx context.Context, userID string) (User, error) {
 	return newData, nil
 }
 
-func GetGames(ctx context.Context, userID string) ([]Game, error) {
+func (d *Data) GetGames(ctx context.Context, userID string) ([]Game, error) {
 	log := slog.With("user-id", userID)
 	client := steam.NewClient()
 
 	log.Debug("Retrieving user owned games")
-	steamGames, err := cachedGetPlayerOwnedGames(ctx, client, userID)
+	steamGames, err := d.cache.GetPlayerOwnedGames(ctx, client, userID)
 	if err != nil {
 		return nil, fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}
@@ -143,12 +115,12 @@ func GetGames(ctx context.Context, userID string) ([]Game, error) {
 	return ret, nil
 }
 
-func GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
+func (d *Data) GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
 	log := slog.With("user", userID, "app-id", appID)
 	client := steam.NewClient()
 
 	log.Debug("Retrieving user owned games")
-	steamGames, err := cachedGetPlayerOwnedGames(ctx, client, userID)
+	steamGames, err := d.cache.GetPlayerOwnedGames(ctx, client, userID)
 	if err != nil {
 		return Game{}, fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}
@@ -180,7 +152,7 @@ func GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
 	}
 
 	log.Debug("Retrieving schema for game")
-	schema, err := cachedGetSchemaForGame(ctx, client, steamGame.AppID)
+	schema, err := d.cache.GetSchemaForGame(ctx, client, steamGame.AppID)
 	if err != nil {
 		return newData, fmt.Errorf("unable to retrieve game schema: %w", err)
 	} else if len(schema.Game.AvailableGameStats.Achievements) == 0 {
@@ -189,14 +161,14 @@ func GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
 	}
 
 	log.Debug("Retrieving global achievement percentages")
-	globalAchievements, err := cachedGetGlobalAchievementPercentagesForApp(ctx, client, steamGame.AppID)
+	globalAchievements, err := d.cache.GetGlobalAchievementPercentagesForApp(ctx, client, steamGame.AppID)
 	if err != nil {
 		log.Warn("Unable to get achievements for game. Assuming no achievements and skipping.", "err", err)
 		return newData, nil
 	}
 
 	log.Debug("Retrieving player achievements for game")
-	playerAchievements, err := cachedGetPlayerAchievements(ctx, client, userID, steamGame.AppID)
+	playerAchievements, err := d.cache.GetPlayerAchievements(ctx, client, userID, steamGame.AppID)
 	if err != nil {
 		log.Warn("Unable to get player achievements for game. Leaving empty.", "err", err)
 		playerAchievements = &steam.PlayerAchievements{
@@ -252,198 +224,3 @@ func GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
 
 	return newData, nil
 }
-
-func Refresher(ctx context.Context) {
-	tick := time.NewTicker(time.Hour * 24)
-
-	for userID := range Data {
-		if err := RefreshData(ctx, userID); err != nil {
-			slog.Error("Failed to refresh data", "error", err)
-		}
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			slog.Info("Data refresher exited")
-			return
-		case <-tick.C:
-			for userID := range Data {
-				if err := RefreshData(ctx, userID); err != nil {
-					slog.Error("Failed to refresh data", "error", err)
-				}
-			}
-		}
-	}
-}
-
-func cachedGetGlobalAchievementPercentagesForApp(ctx context.Context, client *steam.Client, appID uint64) (*steam.GlobalAchievementPercentages, error) {
-	// Check the cache to see if we've already scraped
-	filename := filepath.Join("_cache", fmt.Sprintf("global_%d.json", appID))
-	f, err := os.Open(filename)
-	if err == nil {
-		ret := &steam.GlobalAchievementPercentages{}
-		err = json.NewDecoder(f).Decode(ret)
-		return ret, err
-	}
-
-	// Nope! Build the cache
-	ret, err := client.ISteamUserStats.GetGlobalAchievementPercentagesForApp(ctx, appID)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err = os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	enc := json.NewEncoder(f)
-	enc.SetIndent("", "  ")
-	err = enc.Encode(ret)
-
-	return ret, err
-}
-
-func cachedGetSchemaForGame(ctx context.Context, client *steam.Client, appID uint64) (*steam.GameSchema, error) {
-	// Check the cache to see if we've already scraped
-	filename := filepath.Join("_cache", fmt.Sprintf("schema_%d.json", appID))
-	f, err := os.Open(filename)
-	if err == nil {
-		ret := &steam.GameSchema{}
-		err = json.NewDecoder(f).Decode(ret)
-		return ret, err
-	}
-
-	// Nope! Build the cache
-	ret, err := client.ISteamUserStats.GetSchemaForGame(ctx, appID)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err = os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	enc := json.NewEncoder(f)
-	enc.SetIndent("", "  ")
-	err = enc.Encode(ret)
-
-	return ret, err
-}
-
-func cachedGetPlayerSummaries(ctx context.Context, client *steam.Client, userID string) (*steam.PlayerSummaries, error) {
-	// Check the cache to see if we've already scraped
-	filename := filepath.Join("_cache", fmt.Sprintf("player_%s_summary.json", userID))
-	f, err := os.Open(filename)
-	if err == nil {
-		ret := &steam.PlayerSummaries{}
-		err = json.NewDecoder(f).Decode(ret)
-		return ret, err
-	}
-
-	// Nope! Build the cache
-	ret, err := client.ISteamUser.GetPlayerSummaries(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err = os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	enc := json.NewEncoder(f)
-	enc.SetIndent("", "  ")
-	err = enc.Encode(ret)
-
-	return ret, err
-}
-
-func cachedGetPlayerAchievements(ctx context.Context, client *steam.Client, userID string, appID uint64) (*steam.PlayerAchievements, error) {
-	// Check the cache to see if we've already scraped
-	filename := filepath.Join("_cache", fmt.Sprintf("player_%s_game_%d.json", userID, appID))
-	f, err := os.Open(filename)
-	if err == nil {
-		ret := &steam.PlayerAchievements{}
-		err = json.NewDecoder(f).Decode(ret)
-		return ret, err
-	}
-
-	// Nope! Build the cache
-	ret, err := client.ISteamUserStats.GetPlayerAchievements(ctx, userID, appID)
-	if err != nil {
-		// This will issue a Bad Request if no achievements exist for it
-		// For now, emit an empty result so that we can cache the zero value
-		ret = &steam.PlayerAchievements{
-			PlayerStats: steam.PlayerStats{},
-		}
-	}
-
-	f, err = os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	enc := json.NewEncoder(f)
-	enc.SetIndent("", "  ")
-	err = enc.Encode(ret)
-
-	return ret, err
-}
-
-func cachedGetPlayerOwnedGames(ctx context.Context, client *steam.Client, userID string) (*steam.OwnedGames, error) {
-	// Check the cache to see if we've already scraped
-	filename := filepath.Join("_cache", fmt.Sprintf("player_%s_games.json", userID))
-	f, err := os.Open(filename)
-	if err == nil {
-		ret := &steam.OwnedGames{}
-		err = json.NewDecoder(f).Decode(ret)
-		return ret, err
-	}
-
-	// Nope! Build the cache
-	ret, err := client.IPlayerService.GetOwnedGames(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err = os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	enc := json.NewEncoder(f)
-	enc.SetIndent("", "  ")
-	err = enc.Encode(ret)
-
-	return ret, err
-}
-
-// func cachedAppList(ctx context.Context, client *steam.Client) (*steam.AppList, error) {
-// 	// Check the cache to see if we've already scraped
-// 	filename := filepath.Join("_cache", fmt.Sprintf("apps.json"))
-// 	f, err := os.Open(filename)
-// 	if err == nil {
-// 		ret := &steam.AppList{}
-// 		err = json.NewDecoder(f).Decode(ret)
-// 		return ret, err
-// 	}
-
-// 	apps, err := client.ISteamApps.GetAppList(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	f, err = os.Create(filename)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	enc := json.NewEncoder(f)
-// 	enc.SetIndent("", "  ")
-// 	err = enc.Encode(apps)
-
-// 	return apps, err
-// }

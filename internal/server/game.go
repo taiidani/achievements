@@ -13,7 +13,7 @@ type gameBag struct {
 	Game   data.Game
 }
 
-func gameHandler(resp http.ResponseWriter, req *http.Request) {
+func (s *Server) gameHandler(resp http.ResponseWriter, req *http.Request) {
 	bag := gameBag{}
 	bag.Page = "game"
 	bag.UserID = req.URL.Query().Get("user-id")
@@ -23,7 +23,7 @@ func gameHandler(resp http.ResponseWriter, req *http.Request) {
 
 	if bag.UserID != "" && gameID > 0 {
 		// My userID is 76561197970932835
-		game, err := data.GetGame(req.Context(), bag.UserID, gameID)
+		game, err := s.backend.GetGame(req.Context(), bag.UserID, gameID)
 		if err != nil {
 			errorResponse(resp, http.StatusNotFound, err)
 			return

@@ -29,7 +29,10 @@ func main() {
 }
 
 func serve(ctx context.Context) error {
-	srv := server.NewServer()
+	cache := data.NewFileCache()
+	backend := data.NewData(cache)
+	srv := server.NewServer(backend)
+
 	go func() {
 		slog.Info("Server starting", "dev", server.DevMode)
 		err := srv.ListenAndServe()

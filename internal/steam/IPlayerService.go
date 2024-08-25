@@ -65,7 +65,7 @@ func (c *iPlayerService) GetOwnedGames(ctx context.Context, userID string) (*Own
 	}
 
 	resp, err := c.client.Do(req)
-	if resp.Close {
+	if resp != nil && resp.Close {
 		defer resp.Body.Close()
 	}
 	if err := c.httpError(resp, err); err != nil {

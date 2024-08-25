@@ -8,9 +8,12 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+
+	"github.com/taiidani/achievements/internal/data"
 )
 
 type Server struct {
+	backend *data.Data
 	*http.Server
 }
 
@@ -20,7 +23,7 @@ var templates embed.FS
 // DevMode can be toggled to pull rendered files from the filesystem or the embedded FS.
 var DevMode = os.Getenv("DEV") == "true"
 
-func NewServer() *Server {
+func NewServer(backend *data.Data) *Server {
 	mux := http.NewServeMux()
 
 	port := os.Getenv("PORT")
@@ -33,6 +36,7 @@ func NewServer() *Server {
 			Addr:    fmt.Sprintf(":%s", port),
 			Handler: mux,
 		},
+		backend: backend,
 	}
 	srv.addRoutes(mux)
 
@@ -40,11 +44,11 @@ func NewServer() *Server {
 }
 
 func (s *Server) addRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/", indexHandler)
-	mux.HandleFunc("/game", gameHandler)
-	mux.HandleFunc("/about", aboutHandler)
-	mux.HandleFunc("/assets/*", assetsHandler)
-	mux.HandleFunc("/hx/game/row", hxGameRowHandler)
+	mux.HandleFunc("/", s.indexHandler)
+	mux.HandleFunc("/game", s.gameHandler)
+	mux.HandleFunc("/about", s.aboutHandler)
+	mux.HandleFunc("/assets/*", s.assetsHandler)
+	mux.HandleFunc("/hx/game/row", s.hxGameRowHandler)
 }
 
 func renderHtml(writer http.ResponseWriter, code int, file string, data any) {

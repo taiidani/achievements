@@ -60,7 +60,7 @@ func (c *iSteamUserService) GetPlayerSummaries(ctx context.Context, userID ...st
 	}
 
 	resp, err := c.client.Do(req)
-	if resp.Close {
+	if resp != nil && resp.Close {
 		defer resp.Body.Close()
 	}
 	if err := c.httpError(resp, err); err != nil {
@@ -99,7 +99,7 @@ func (c *iSteamUserService) ResolveVanityURL(ctx context.Context, vanityURL stri
 	}
 
 	resp, err := c.client.Do(req)
-	if resp.Close {
+	if resp != nil && resp.Close {
 		defer resp.Body.Close()
 	}
 	if err := c.httpError(resp, err); err != nil {

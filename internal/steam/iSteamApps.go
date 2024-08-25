@@ -44,7 +44,7 @@ func (c *iSteamAppsService) GetAppList(ctx context.Context) (*AppList, error) {
 	}
 
 	resp, err := c.client.Do(req)
-	if resp.Close {
+	if resp != nil && resp.Close {
 		defer resp.Body.Close()
 	}
 	if err := c.httpError(resp, err); err != nil {
@@ -88,7 +88,7 @@ func (c *iSteamAppsService) GetSDRConfig(ctx context.Context, appID uint64) (*SD
 	}
 
 	resp, err := c.client.Do(req)
-	if resp.Close {
+	if resp != nil && resp.Close {
 		defer resp.Body.Close()
 	}
 	if err := c.httpError(resp, err); err != nil {

@@ -46,7 +46,7 @@ func (c *iSteamUserStatsService) GetGlobalAchievementPercentagesForApp(ctx conte
 	}
 
 	resp, err := c.client.Do(req)
-	if resp.Close {
+	if resp != nil && resp.Close {
 		defer resp.Body.Close()
 	}
 	if err := c.httpError(resp, err); err != nil {
@@ -102,7 +102,7 @@ func (c *iSteamUserStatsService) GetSchemaForGame(ctx context.Context, appID uin
 	}
 
 	resp, err := c.client.Do(req)
-	if resp.Close {
+	if resp != nil && resp.Close {
 		defer resp.Body.Close()
 	}
 	if err := c.httpError(resp, err); err != nil {
@@ -152,7 +152,7 @@ func (c *iSteamUserStatsService) GetPlayerAchievements(ctx context.Context, user
 	}
 
 	resp, err := c.client.Do(req)
-	if resp.Close {
+	if resp != nil && resp.Close {
 		defer resp.Body.Close()
 	}
 	if err := c.httpError(resp, err); err != nil {

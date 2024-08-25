@@ -8,7 +8,7 @@ type aboutBag struct {
 	baseBag
 }
 
-func aboutHandler(resp http.ResponseWriter, req *http.Request) {
+func (s *Server) aboutHandler(resp http.ResponseWriter, req *http.Request) {
 	data := aboutBag{}
 	data.Page = "about"
 

@@ -14,7 +14,7 @@ type hxGameRowBag struct {
 	Game   data.Game
 }
 
-func hxGameRowHandler(resp http.ResponseWriter, req *http.Request) {
+func (s *Server) hxGameRowHandler(resp http.ResponseWriter, req *http.Request) {
 	bag := hxGameRowBag{}
 	bag.UserID = req.URL.Query().Get("user-id")
 
@@ -26,7 +26,7 @@ func hxGameRowHandler(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	game, err := data.GetGame(req.Context(), bag.UserID, bag.GameID)
+	game, err := s.backend.GetGame(req.Context(), bag.UserID, bag.GameID)
 	if err != nil {
 		errorResponse(resp, http.StatusNotFound, err)
 		return
