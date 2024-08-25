@@ -52,6 +52,7 @@
             <table class="table table-dark table-hover table-striped">
                 <thead>
                     <tr>
+                        <th>{{/* Logo */}}</th>
                         <th>Name</th>
                         <th>Achievement Progress</th>
                         <th>Time Played</th>
@@ -61,10 +62,7 @@
                 <tbody class="table-group-divider">
                     {{ range $i, $el := .Games }}
                     <tr hx-trigger="load" hx-get="/hx/game/row?game-id={{$el.ID}}">
-                        <td>{{ $el.DisplayName }} <img class="htmx-indicator" src="/assets/loading.svg" /></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
+                        <td colspan=5>{{ $el.DisplayName }} <img class="htmx-indicator" src="/assets/loading.svg" /></td>
                     </tr>
                     {{ end }}
                 </tbody>

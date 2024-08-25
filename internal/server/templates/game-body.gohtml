@@ -10,6 +10,7 @@
 </div>
 <div class="row">
     <div id="game" class="col-md-12" data-id="{{.Game.ID}}">
+        <div style="float: right"><img class="header" src="https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{{.Game.ID}}/header.jpg" alt="{{.Game.DisplayName}} Logo" /></div>
         <h1>{{.Game.DisplayName}} {{- if eq .Game.AchievementUnlockedPercentage 100 }} 🏆{{end}}</h1>
         <p>
             <div class="progress" role="progressbar" aria-label="Default striped example" aria-valuenow="{{ .Game.AchievementUnlockedCount }}" aria-valuemin="0" aria-valuemax="{{ .Game.AchievementTotalCount }}">

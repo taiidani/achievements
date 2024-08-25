@@ -13,13 +13,15 @@ img.htmx-indicator {
     height: 2em;
 }
 
-.htmx-indicator{
+.htmx-indicator {
     display: none;
 }
-.htmx-request .htmx-indicator{
+
+.htmx-request .htmx-indicator {
     display: inline;
 }
-.htmx-request.htmx-indicator{
+
+.htmx-request.htmx-indicator {
     display: inline;
 }
 
@@ -52,6 +54,14 @@ hr {
     font-weight: lighter;
     font-style: italic;
     color: gray;
+}
+
+#games td img.header {
+    height: 3em;
+}
+
+#game img.header {
+    height: 10em;
 }
 
 footer {
