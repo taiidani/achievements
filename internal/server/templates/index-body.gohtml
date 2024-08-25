@@ -62,7 +62,9 @@
                 <tbody class="table-group-divider">
                     {{ range $i, $el := .Games }}
                     <tr hx-trigger="load" hx-get="/hx/game/row?game-id={{$el.ID}}">
-                        <td colspan=5>{{ $el.DisplayName }} <img class="htmx-indicator" src="/assets/loading.svg" /></td>
+                        <td><img class="header" src="https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{{$el.ID}}/{{$el.Icon}}.jpg" alt="{{$el.DisplayName}} Logo" /></td>
+                        <td>{{ $el.DisplayName }}</td>
+                        <td colspan=3><img class="htmx-indicator" src="/assets/loading.svg" /></td>
                     </tr>
                     {{ end }}
                 </tbody>

@@ -107,6 +107,7 @@ func (d *Data) GetGames(ctx context.Context, userID string) ([]Game, error) {
 		newData := Game{
 			ID:          game.AppID,
 			DisplayName: game.Name,
+			Icon:        game.ImgIconURL,
 		}
 
 		ret = append(ret, newData)
@@ -136,6 +137,7 @@ func (d *Data) GetGame(ctx context.Context, userID string, appID uint64) (Game, 
 	log = log.With("game-name", steamGame.Name)
 	newData := Game{
 		ID:              steamGame.AppID,
+		Icon:            steamGame.ImgIconURL,
 		DisplayName:     steamGame.Name,
 		Achievements:    []Achievement{},
 		PlaytimeForever: time.Duration(steamGame.PlaytimeForever) * time.Minute,

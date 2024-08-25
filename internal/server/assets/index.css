@@ -57,11 +57,11 @@ hr {
 }
 
 #games td img.header {
-    height: 3em;
+    max-height: 3em;
 }
 
 #game img.header {
-    height: 10em;
+    max-height: 10em;
 }
 
 footer {

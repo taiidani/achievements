@@ -1,7 +1,7 @@
 <td>
-    <img class="header" src="https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{{.Game.ID}}/header.jpg" alt="{{.Game.DisplayName}} Logo" />
+    <a href="/game?user-id={{.UserID}}&game-id={{.GameID}}"><img class="header" src="https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{{.GameID}}/{{.Game.Icon}}.jpg" alt="{{.Game.DisplayName}} Logo" /></a>
 </td>
-<td hx-get="/game?user-id={{.UserID}}&game-id={{.GameID}}" hx-target="#app">
+<td>
     <a href="/game?user-id={{.UserID}}&game-id={{.GameID}}">{{$.Game.DisplayName}}</a>
     {{- if eq .Game.AchievementUnlockedPercentage 100 }} 🏆{{end}}
     <img class="htmx-indicator" src="/assets/loading.svg" />
