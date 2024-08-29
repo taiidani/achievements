@@ -6,20 +6,21 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/taiidani/achievements/internal/data/cache"
 	"github.com/taiidani/achievements/internal/steam"
 )
 
-type CachedData struct {
-	Games []Game
+// refresherData contains a list of UserIDs to regularly refresh.
+var refresherData = []string{
+	// taiidani
+	"76561197970932835",
 }
 
-var data = map[string]*CachedData{}
-
-func Refresher(ctx context.Context) {
+func Refresher(ctx context.Context, client *steam.Client, cache cache.Cache) {
 	tick := time.NewTicker(time.Hour * 24)
 
-	for userID := range data {
-		if err := RefreshData(ctx, userID); err != nil {
+	for _, userID := range refresherData {
+		if err := refreshData(ctx, client, cache, userID); err != nil {
 			slog.Error("Failed to refresh data", "error", err)
 		}
 	}
@@ -30,8 +31,8 @@ func Refresher(ctx context.Context) {
 			slog.Info("Data refresher exited")
 			return
 		case <-tick.C:
-			for userID := range data {
-				if err := RefreshData(ctx, userID); err != nil {
+			for _, userID := range refresherData {
+				if err := refreshData(ctx, client, cache, userID); err != nil {
 					slog.Error("Failed to refresh data", "error", err)
 				}
 			}
@@ -39,11 +40,9 @@ func Refresher(ctx context.Context) {
 	}
 }
 
-func RefreshData(ctx context.Context, userID string) error {
+func refreshData(ctx context.Context, client *steam.Client, cache cache.Cache, userID string) error {
 	log := slog.With("user", userID)
-
-	cache := NewFileCache()
-	d := NewData(cache)
+	d := NewData(client, cache)
 
 	log.Info("Refreshing data")
 	start := time.Now()
@@ -51,25 +50,18 @@ func RefreshData(ctx context.Context, userID string) error {
 		log.Info("Refresh complete", "duration", time.Since(start))
 	}()
 
-	newData := &CachedData{}
-
-	client := steam.NewClient()
-
 	log.Debug("Retrieving user owned games")
-	steamGames, err := cache.GetPlayerOwnedGames(ctx, client, userID)
+	steamGames, err := d.cache.GetPlayerOwnedGames(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}
 
 	for _, steamGame := range steamGames.Response.Games {
-		game, err := d.GetGame(ctx, userID, steamGame.AppID)
+		_, err := d.GetGame(ctx, userID, steamGame.AppID)
 		if err != nil {
 			return fmt.Errorf("could not refresh data for game %q: %w", steamGame.AppID, err)
 		}
-
-		newData.Games = append(newData.Games, game)
 	}
 
-	data[userID] = newData
 	return nil
 }

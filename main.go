@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"github.com/taiidani/achievements/internal/data"
+	"github.com/taiidani/achievements/internal/data/cache"
 	"github.com/taiidani/achievements/internal/server"
+	"github.com/taiidani/achievements/internal/steam"
 )
 
 func main() {
@@ -19,18 +22,45 @@ func main() {
 
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
+	// Define external clients
+	client := steam.NewClient()
+	// cache := cache.NewFile()
+	cache, err := setupCache()
+	if err != nil {
+		log.Fatal("Unable to set up cache", "error", err)
+	}
+
 	// Begin refreshing data
-	go data.Refresher(ctx)
+	go data.Refresher(ctx, client, cache)
 
 	// Serve until interrupted
-	if err := serve(ctx); err != nil {
+	if err := serve(ctx, client, cache); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func serve(ctx context.Context) error {
-	cache := data.NewFileCache()
-	backend := data.NewData(cache)
+func setupCache() (cache.Cache, error) {
+	if addr, ok := os.LookupEnv("REDIS_ADDR"); ok {
+		return cache.NewRedis(addr), nil
+	} else if host, ok := os.LookupEnv("REDIS_HOST"); ok {
+		db := 0
+		if dbParsed, err := strconv.ParseInt(os.Getenv("REDIS_DB"), 10, 64); err == nil {
+			db = int(dbParsed)
+		}
+
+		port := os.Getenv("REDIS_PORT")
+		user := os.Getenv("REDIS_USER")
+		pass := os.Getenv("REDIS_PASSWORD")
+
+		return cache.NewRedisSecureCache(host, port, user, pass, db), nil
+	}
+
+	slog.Warn("No REDIS_ADDR or REDIS_HOST env var set. Falling back upon in-memory store")
+	return cache.NewMemory(), nil
+}
+
+func serve(ctx context.Context, client *steam.Client, cache cache.Cache) error {
+	backend := data.NewData(client, cache)
 	srv := server.NewServer(backend)
 
 	go func() {
