@@ -11,10 +11,10 @@
 <div class="row">
     <div id="game" class="col-md-12" data-id="{{.Game.ID}}">
         <div style="float: right"><img class="header" src="https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{{.Game.ID}}/header.jpg" alt="{{.Game.DisplayName}} Logo" /></div>
-        <h1>{{.Game.DisplayName}} {{- if eq .Game.AchievementUnlockedPercentage 100 }} 🏆{{end}}</h1>
+        <h1>{{.Game.DisplayName}} {{- if eq .Achievements.AchievementUnlockedPercentage 100 }} 🏆{{end}}</h1>
         <p>
-            <div class="progress" role="progressbar" aria-label="Default striped example" aria-valuenow="{{ .Game.AchievementUnlockedCount }}" aria-valuemin="0" aria-valuemax="{{ .Game.AchievementTotalCount }}">
-                <div class="progress-bar progress-bar-striped" style="width: {{ .Game.AchievementUnlockedPercentage }}%">{{ if gt .Game.AchievementUnlockedPercentage 10 }}{{ .Game.AchievementUnlockedPercentage }}% Complete{{ end }}</div>
+            <div class="progress" role="progressbar" aria-label="Default striped example" aria-valuenow="{{ .Achievements.AchievementUnlockedCount }}" aria-valuemin="0" aria-valuemax="{{ .Achievements.AchievementTotalCount }}">
+                <div class="progress-bar progress-bar-striped" style="width: {{ .Achievements.AchievementUnlockedPercentage }}%">{{ if gt .Achievements.AchievementUnlockedPercentage 10 }}{{ .Achievements.AchievementUnlockedPercentage }}% Complete{{ end }}</div>
             </div>
         </p>
 
@@ -29,7 +29,7 @@
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                {{ range $i, $el := .Game.Achievements }}
+                {{ range $i, $el := .Achievements.Achievements }}
                     <tr>
                         <td>
                             <img alt="{{$el.Name}}" src="{{$el.Icon}}" />
@@ -46,7 +46,9 @@
                         </td>
                         <td>
                             {{ if $el.UnlockedOn }}
-                            <p>{{$el.UnlockedOn.Format "2006-01-02" }}</p>
+                            <p>✅ {{$el.UnlockedOn.Format "2006-01-02" }}</p>
+                            {{ else }}
+                            <p>❌</p>
                             {{ end }}
                         </td>
                         <td>

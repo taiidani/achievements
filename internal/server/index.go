@@ -13,7 +13,10 @@ type indexBag struct {
 	baseBag
 	UserID string
 	User   data.User
-	Games  []data.Game
+	Games  []struct {
+		data.Game
+		UserID string
+	}
 }
 
 func (s *Server) indexHandler(resp http.ResponseWriter, req *http.Request) {
@@ -48,7 +51,15 @@ func (s *Server) indexHandler(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		bag.Games = games
+		for _, game := range games {
+			bag.Games = append(bag.Games, struct {
+				data.Game
+				UserID string
+			}{
+				Game:   game,
+				UserID: bag.UserID,
+			})
+		}
 	}
 
 	sort.Slice(bag.Games, func(i, j int) bool {

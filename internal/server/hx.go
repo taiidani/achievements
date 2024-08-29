@@ -9,9 +9,9 @@ import (
 )
 
 type hxGameRowBag struct {
-	UserID string
-	GameID uint64
-	Game   data.Game
+	UserID       string
+	GameID       uint64
+	Achievements data.Achievements
 }
 
 func (s *Server) hxGameRowHandler(resp http.ResponseWriter, req *http.Request) {
@@ -26,12 +26,12 @@ func (s *Server) hxGameRowHandler(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	game, err := s.backend.GetGame(req.Context(), bag.UserID, bag.GameID)
+	achievements, err := s.backend.GetAchievements(req.Context(), bag.UserID, bag.GameID)
 	if err != nil {
 		errorResponse(resp, http.StatusNotFound, err)
 		return
 	}
-	bag.Game = game
+	bag.Achievements = achievements
 
-	renderHtml(resp, http.StatusOK, "index-row.gohtml", bag)
+	renderHtml(resp, http.StatusOK, "hx-achievement-progress.gohtml", bag)
 }

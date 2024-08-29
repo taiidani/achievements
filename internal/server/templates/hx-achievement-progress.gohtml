@@ -1,0 +1,7 @@
+{{ if eq .Achievements.AchievementUnlockedPercentage 100 }}
+🏆
+{{ else }}
+<div class="progress" role="progressbar" aria-label="Default striped example" aria-valuenow="{{ .Achievements.AchievementUnlockedCount }}" aria-valuemin="0" aria-valuemax="{{ .Achievements.AchievementTotalCount }}">
+    <div class="progress-bar progress-bar-striped" style="width: {{ .Achievements.AchievementUnlockedPercentage }}%"></div>
+</div>
+{{end}}

@@ -9,8 +9,9 @@ import (
 
 type gameBag struct {
 	baseBag
-	UserID string
-	Game   data.Game
+	UserID       string
+	Game         data.Game
+	Achievements data.Achievements
 }
 
 func (s *Server) gameHandler(resp http.ResponseWriter, req *http.Request) {
@@ -28,8 +29,13 @@ func (s *Server) gameHandler(resp http.ResponseWriter, req *http.Request) {
 			errorResponse(resp, http.StatusNotFound, err)
 			return
 		}
-
 		bag.Game = game
+
+		bag.Achievements, err = s.backend.GetAchievements(req.Context(), bag.UserID, gameID)
+		if err != nil {
+			errorResponse(resp, http.StatusNotFound, err)
+			return
+		}
 	}
 
 	template := "game.gohtml"

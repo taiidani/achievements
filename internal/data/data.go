@@ -1,3 +1,6 @@
+// package data documents the mechanisms for retrieving data from Steam as well as caching it locally.
+//
+// Many of the API calls are based upon endpoints documented at https://steamapi.xpaw.me/
 package data
 
 import (
@@ -10,7 +13,8 @@ import (
 )
 
 type Data struct {
-	cache DataCache
+	client *steam.Client
+	cache  DataCache
 }
 
 type DataCache interface {
@@ -22,16 +26,19 @@ type DataCache interface {
 }
 
 type Game struct {
-	ID                            uint64
-	DisplayName                   string
-	Icon                          string
+	ID              uint64
+	DisplayName     string
+	Icon            string
+	PlaytimeForever time.Duration
+	LastPlayed      time.Time
+	LastPlayedSince time.Duration
+}
+
+type Achievements struct {
 	Achievements                  []Achievement
 	AchievementTotalCount         int
 	AchievementUnlockedCount      int
 	AchievementUnlockedPercentage int
-	PlaytimeForever               time.Duration
-	LastPlayed                    time.Time
-	LastPlayedSince               time.Duration
 }
 
 type Achievement struct {
@@ -55,16 +62,16 @@ type User struct {
 
 func NewData(cache DataCache) *Data {
 	return &Data{
-		cache: cache,
+		client: steam.NewClient(),
+		cache:  cache,
 	}
 }
 
 func (d *Data) GetUser(ctx context.Context, userID string) (User, error) {
 	log := slog.With("user", userID)
-	client := steam.NewClient()
 
 	log.Debug("Retrieving user")
-	playerSummaries, err := d.cache.GetPlayerSummaries(ctx, client, userID)
+	playerSummaries, err := d.cache.GetPlayerSummaries(ctx, d.client, userID)
 	if err != nil {
 		return User{}, fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}
@@ -90,10 +97,9 @@ func (d *Data) GetUser(ctx context.Context, userID string) (User, error) {
 
 func (d *Data) GetGames(ctx context.Context, userID string) ([]Game, error) {
 	log := slog.With("user-id", userID)
-	client := steam.NewClient()
 
 	log.Debug("Retrieving user owned games")
-	steamGames, err := d.cache.GetPlayerOwnedGames(ctx, client, userID)
+	steamGames, err := d.cache.GetPlayerOwnedGames(ctx, d.client, userID)
 	if err != nil {
 		return nil, fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}
@@ -110,6 +116,10 @@ func (d *Data) GetGames(ctx context.Context, userID string) ([]Game, error) {
 			Icon:        game.ImgIconURL,
 		}
 
+		if err := d.populateGamePlaytime(&newData, &game); err != nil {
+			log.Warn("Unable to populate playtime, leaving empty", "error", err)
+		}
+
 		ret = append(ret, newData)
 	}
 
@@ -118,10 +128,9 @@ func (d *Data) GetGames(ctx context.Context, userID string) ([]Game, error) {
 
 func (d *Data) GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
 	log := slog.With("user", userID, "app-id", appID)
-	client := steam.NewClient()
 
 	log.Debug("Retrieving user owned games")
-	steamGames, err := d.cache.GetPlayerOwnedGames(ctx, client, userID)
+	steamGames, err := d.cache.GetPlayerOwnedGames(ctx, d.client, userID)
 	if err != nil {
 		return Game{}, fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}
@@ -136,41 +145,60 @@ func (d *Data) GetGame(ctx context.Context, userID string, appID uint64) (Game, 
 
 	log = log.With("game-name", steamGame.Name)
 	newData := Game{
-		ID:              steamGame.AppID,
-		Icon:            steamGame.ImgIconURL,
-		DisplayName:     steamGame.Name,
-		Achievements:    []Achievement{},
-		PlaytimeForever: time.Duration(steamGame.PlaytimeForever) * time.Minute,
+		ID:          steamGame.AppID,
+		Icon:        steamGame.ImgIconURL,
+		DisplayName: steamGame.Name,
 	}
+
+	if err := d.populateGamePlaytime(&newData, &steamGame); err != nil {
+		log.Warn("Unable to populate playtime, leaving empty", "error", err)
+	}
+
+	return newData, nil
+}
+
+func (d *Data) populateGamePlaytime(game *Game, steamGame *steam.OwnedGame) error {
+	log := slog.With("game-name", steamGame.Name)
+	game.PlaytimeForever = time.Duration(steamGame.PlaytimeForever) * time.Minute
 
 	if steamGame.PlaytimeForever == 0 {
 		log.Debug("Skipping unplayed game")
-		return newData, nil
+		return nil
 	}
 
-	if steamGame.RTimeLastPlayed > 0 {
-		newData.LastPlayed = time.Unix(int64(steamGame.RTimeLastPlayed), 0)
-		newData.LastPlayedSince = time.Since(newData.LastPlayed)
+	// This number sometimes comes from the API when the game has not been played
+	// Check for this alongside the zero value when determining if the game has been
+	// played.
+	const zeroTimePlayed = 86400
+
+	if steamGame.RTimeLastPlayed > zeroTimePlayed {
+		game.LastPlayed = time.Unix(int64(steamGame.RTimeLastPlayed), 0)
+		game.LastPlayedSince = time.Since(game.LastPlayed)
 	}
 
+	return nil
+}
+
+func (d *Data) GetAchievements(ctx context.Context, userID string, gameID uint64) (Achievements, error) {
+	log := slog.With("game-id", gameID)
 	log.Debug("Retrieving schema for game")
-	schema, err := d.cache.GetSchemaForGame(ctx, client, steamGame.AppID)
+	schema, err := d.cache.GetSchemaForGame(ctx, d.client, gameID)
 	if err != nil {
-		return newData, fmt.Errorf("unable to retrieve game schema: %w", err)
+		return Achievements{}, fmt.Errorf("unable to retrieve game schema: %w", err)
 	} else if len(schema.Game.AvailableGameStats.Achievements) == 0 {
 		log.Debug("Game has no achievements. Skipping.")
-		return newData, nil
+		return Achievements{}, nil
 	}
 
 	log.Debug("Retrieving global achievement percentages")
-	globalAchievements, err := d.cache.GetGlobalAchievementPercentagesForApp(ctx, client, steamGame.AppID)
+	globalAchievements, err := d.cache.GetGlobalAchievementPercentagesForApp(ctx, d.client, gameID)
 	if err != nil {
 		log.Warn("Unable to get achievements for game. Assuming no achievements and skipping.", "err", err)
-		return newData, nil
+		return Achievements{}, nil
 	}
 
 	log.Debug("Retrieving player achievements for game")
-	playerAchievements, err := d.cache.GetPlayerAchievements(ctx, client, userID, steamGame.AppID)
+	playerAchievements, err := d.cache.GetPlayerAchievements(ctx, d.client, userID, gameID)
 	if err != nil {
 		log.Warn("Unable to get player achievements for game. Leaving empty.", "err", err)
 		playerAchievements = &steam.PlayerAchievements{
@@ -179,8 +207,10 @@ func (d *Data) GetGame(ctx context.Context, userID string, appID uint64) (Game, 
 			},
 		}
 	}
-	newData.AchievementTotalCount = len(playerAchievements.PlayerStats.Achievements)
-	newData.AchievementUnlockedCount = 0
+
+	ret := Achievements{}
+	ret.AchievementTotalCount = len(playerAchievements.PlayerStats.Achievements)
+	ret.AchievementUnlockedCount = 0
 
 	for _, gameAchievement := range schema.Game.AvailableGameStats.Achievements {
 		bagAchievement := Achievement{
@@ -211,7 +241,7 @@ func (d *Data) GetGame(ctx context.Context, userID string, appID uint64) (Game, 
 			}
 		}
 		if bagAchievement.Achieved {
-			newData.AchievementUnlockedCount++
+			ret.AchievementUnlockedCount++
 		}
 
 		bagAchievement.Icon = gameAchievement.Icon
@@ -219,10 +249,9 @@ func (d *Data) GetGame(ctx context.Context, userID string, appID uint64) (Game, 
 			bagAchievement.Icon = gameAchievement.IconGray
 		}
 
-		newData.Achievements = append(newData.Achievements, bagAchievement)
+		ret.Achievements = append(ret.Achievements, bagAchievement)
 	}
 
-	newData.AchievementUnlockedPercentage = int((float64(newData.AchievementUnlockedCount) / float64(newData.AchievementTotalCount)) * 100)
-
-	return newData, nil
+	ret.AchievementUnlockedPercentage = int((float64(ret.AchievementUnlockedCount) / float64(ret.AchievementTotalCount)) * 100)
+	return ret, nil
 }
