@@ -12,14 +12,19 @@
     <div id="game" class="col-md-12" data-id="{{.Game.ID}}">
         <div style="float: right"><img class="header" src="https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{{.Game.ID}}/header.jpg" alt="{{.Game.DisplayName}} Logo" /></div>
         <h1>{{.Game.DisplayName}} {{- if eq .Achievements.AchievementUnlockedPercentage 100 }} 🏆{{end}}</h1>
+        {{ if .Achievements.Achievements }}
         <p>
             <div class="progress" role="progressbar" aria-label="Default striped example" aria-valuenow="{{ .Achievements.AchievementUnlockedCount }}" aria-valuemin="0" aria-valuemax="{{ .Achievements.AchievementTotalCount }}">
                 <div class="progress-bar progress-bar-striped" style="width: {{ .Achievements.AchievementUnlockedPercentage }}%">{{ if gt .Achievements.AchievementUnlockedPercentage 10 }}{{ .Achievements.AchievementUnlockedPercentage }}% Complete{{ end }}</div>
             </div>
         </p>
+        {{ end }}
 
         <div class="game">
-            <table class="table table-dark table-hover table-striped">
+            {{ if not .Achievements.Achievements }}
+            <p>This game has no published achievements.</p>
+            {{ else }}
+            <table class="table table-dark table-hover">
                 <thead>
                     <tr>
                         <th></th>
@@ -30,7 +35,7 @@
                 </thead>
                 <tbody class="table-group-divider">
                 {{ range $i, $el := .Achievements.Achievements }}
-                    <tr>
+                    <tr style="background: linear-gradient(to right, var(--bs-table-bg) {{ printf "%.02f%%" $el.GlobalPercentage }}, var(--bs-table-striped-bg) {{ printf "%.02f%%" $el.GlobalPercentage }});">
                         <td>
                             <img alt="{{$el.Name}}" src="{{$el.Icon}}" />
                         </td>
@@ -58,6 +63,7 @@
                 {{ end }}
                 </tbody>
             </table>
+            {{ end }}
         </div>
     </div>
 </div>

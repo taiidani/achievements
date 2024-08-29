@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/taiidani/achievements/internal/data"
@@ -36,6 +37,10 @@ func (s *Server) gameHandler(resp http.ResponseWriter, req *http.Request) {
 			errorResponse(resp, http.StatusNotFound, err)
 			return
 		}
+
+		sort.Slice(bag.Achievements.Achievements, func(i, j int) bool {
+			return bag.Achievements.Achievements[i].GlobalPercentage > bag.Achievements.Achievements[j].GlobalPercentage
+		})
 	}
 
 	template := "game.gohtml"

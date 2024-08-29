@@ -56,6 +56,11 @@ hr {
     color: gray;
 }
 
+/* Revert the Bootstrap table color, allowing the per-element gradient to come through */
+.game .table tr td {
+    background-color: inherit;
+}
+
 #games td img.header {
     max-height: 3em;
 }
