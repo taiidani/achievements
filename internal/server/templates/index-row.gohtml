@@ -7,5 +7,5 @@
 <td hx-trigger="load" hx-get="/hx/game/row?game-id={{.ID}}">
     <img class="htmx-indicator" src="/assets/loading.svg" />
 </td>
-<td>{{ .PlaytimeForever }}</td>
+<td title="{{ .PlaytimeForever }}">{{ printf "%.00f" .PlaytimeForever.Hours }} hours</td>
 <td>{{ if .LastPlayed.IsZero }}Unknown{{ else }}<span title="{{ .LastPlayedSince }}">{{ .LastPlayed.Format "2006-01-02" }}</span>{{ end }}</td>
