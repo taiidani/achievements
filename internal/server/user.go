@@ -87,7 +87,11 @@ func (s *Server) userLoginSteamHandler(w http.ResponseWriter, r *http.Request) {
 		SteamID: steamID,
 	}
 	sessionKey := s.buildSessionKey()
-	s.backend.SetSession(r.Context(), sessionKey, sess)
+	err = s.backend.SetSession(r.Context(), sessionKey, sess)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	cookie := http.Cookie{
 		Name:     "session",
