@@ -1,0 +1,11 @@
+{{ template "header.gohtml" .}}
+
+<h1>Login</h1>
+
+<p>Log into your account to have the site remember you between visits and enable personalization options. At the moment only Steam is a supported login method.</p>
+
+<p>
+    <a href="{{ .SteamLoginURL }}"><img src="/assets/login_steam.png" /></a>
+</p>
+
+{{ template "footer.gohtml" .}}

@@ -10,62 +10,64 @@ import (
 
 type indexBag struct {
 	baseBag
-	UserID string
-	User   data.User
-	Games  []struct {
+	User  data.User
+	Games []struct {
 		data.Game
-		UserID string
+		SteamID string
 	}
 }
 
 func (s *Server) indexHandler(resp http.ResponseWriter, req *http.Request) {
-	bag := indexBag{}
-	bag.Page = "home"
-	bag.UserID = req.URL.Query().Get("user-id")
+	bag := indexBag{baseBag: newBag(req, "home")}
 
-	if bag.UserID != "" {
-		// My userID is 76561197970932835
-		user, err := s.backend.GetUser(req.Context(), bag.UserID)
+	// If no user has been set, display the welcome page
+	if bag.SteamID == "" {
+		renderHtml(resp, http.StatusOK, "index.gohtml", bag)
+		return
+	}
+
+	// A user has been set. Gather their information!
+	// My steamID is 76561197970932835
+	user, err := s.backend.GetUser(req.Context(), bag.SteamID)
+	if err != nil {
+		// Attempt to resolve the user's vanity URL into an ID
+		bag.SteamID, err = s.backend.ResolveVanityURL(req.Context(), bag.SteamID)
 		if err != nil {
-			// Attempt to resolve the user's vanity URL into an ID
-			bag.UserID, err = s.backend.ResolveVanityURL(req.Context(), bag.UserID)
-			if err != nil {
-				errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not resolve user id %q to a Steam User ID or Vanity URL: %w", bag.UserID, err))
-				return
-			}
-
-			user, err = s.backend.GetUser(req.Context(), bag.UserID)
-			if err != nil {
-				errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not get user data for %q: %w", bag.UserID, err))
-				return
-			}
-		}
-		bag.User = user
-
-		games, err := s.backend.GetGames(req.Context(), bag.UserID)
-		if err != nil {
-			errorResponse(resp, http.StatusNotFound, err)
+			errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not resolve user id %q to a Steam User ID or Vanity URL: %w", bag.SteamID, err))
 			return
 		}
 
-		for _, game := range games {
-			bag.Games = append(bag.Games, struct {
-				data.Game
-				UserID string
-			}{
-				Game:   game,
-				UserID: bag.UserID,
-			})
+		user, err = s.backend.GetUser(req.Context(), bag.SteamID)
+		if err != nil {
+			errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not get user data for %q: %w", bag.SteamID, err))
+			return
 		}
+	}
+	bag.User = user
+
+	games, err := s.backend.GetGames(req.Context(), bag.SteamID)
+	if err != nil {
+		errorResponse(resp, http.StatusNotFound, err)
+		return
+	}
+
+	for _, game := range games {
+		bag.Games = append(bag.Games, struct {
+			data.Game
+			SteamID string
+		}{
+			Game:    game,
+			SteamID: bag.SteamID,
+		})
 	}
 
 	sort.Slice(bag.Games, func(i, j int) bool {
 		return bag.Games[i].DisplayName < bag.Games[j].DisplayName
 	})
 
-	template := "index.gohtml"
+	template := "games.gohtml"
 	if req.Header.Get("HX-Request") != "" {
-		template = "index-body.gohtml"
+		template = "games-body.gohtml"
 	}
 
 	renderHtml(resp, http.StatusOK, template, bag)

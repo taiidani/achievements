@@ -41,7 +41,7 @@ func Refresher(ctx context.Context, client *steam.Client, cache cache.Cache) {
 }
 
 func refreshData(ctx context.Context, client *steam.Client, cache cache.Cache, userID string) error {
-	log := slog.With("user", userID)
+	log := slog.With("steam-id", userID)
 	d := NewData(client, cache)
 
 	log.Info("Refreshing data")
@@ -51,7 +51,7 @@ func refreshData(ctx context.Context, client *steam.Client, cache cache.Cache, u
 	}()
 
 	log.Debug("Retrieving user owned games")
-	steamGames, err := d.cache.GetPlayerOwnedGames(ctx, userID)
+	steamGames, err := d.steam.GetPlayerOwnedGames(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}

@@ -2,7 +2,10 @@ module github.com/taiidani/achievements
 
 go 1.22.1
 
-require github.com/redis/go-redis/v9 v9.6.1
+require (
+	github.com/google/uuid v1.6.0
+	github.com/redis/go-redis/v9 v9.6.1
+)
 
 require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

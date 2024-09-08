@@ -14,7 +14,8 @@ import (
 )
 
 type Data struct {
-	cache SteamHelper
+	cache cache.Cache
+	steam SteamHelper
 }
 
 type Game struct {
@@ -54,7 +55,8 @@ type User struct {
 
 func NewData(client *steam.Client, cache cache.Cache) *Data {
 	return &Data{
-		cache: *NewSteamHelper(client, cache),
+		cache: cache,
+		steam: *NewSteamHelper(client, cache),
 	}
 }
 
@@ -62,7 +64,7 @@ func (d *Data) GetUser(ctx context.Context, userID string) (User, error) {
 	log := slog.With("user", userID)
 
 	log.Debug("Retrieving user")
-	playerSummaries, err := d.cache.GetPlayerSummaries(ctx, userID)
+	playerSummaries, err := d.steam.GetPlayerSummaries(ctx, userID)
 	if err != nil {
 		return User{}, fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}
@@ -87,10 +89,10 @@ func (d *Data) GetUser(ctx context.Context, userID string) (User, error) {
 }
 
 func (d *Data) GetGames(ctx context.Context, userID string) ([]Game, error) {
-	log := slog.With("user-id", userID)
+	log := slog.With("steam-id", userID)
 
 	log.Debug("Retrieving user owned games")
-	steamGames, err := d.cache.GetPlayerOwnedGames(ctx, userID)
+	steamGames, err := d.steam.GetPlayerOwnedGames(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}
@@ -118,10 +120,10 @@ func (d *Data) GetGames(ctx context.Context, userID string) ([]Game, error) {
 }
 
 func (d *Data) GetGame(ctx context.Context, userID string, appID uint64) (Game, error) {
-	log := slog.With("user", userID, "app-id", appID)
+	log := slog.With("steam-id", userID, "app-id", appID)
 
 	log.Debug("Retrieving user owned games")
-	steamGames, err := d.cache.GetPlayerOwnedGames(ctx, userID)
+	steamGames, err := d.steam.GetPlayerOwnedGames(ctx, userID)
 	if err != nil {
 		return Game{}, fmt.Errorf("could not query for player %q games: %w", userID, err)
 	}
@@ -173,7 +175,7 @@ func (d *Data) populateGamePlaytime(game *Game, steamGame *steam.OwnedGame) erro
 func (d *Data) GetAchievements(ctx context.Context, userID string, gameID uint64) (Achievements, error) {
 	log := slog.With("game-id", gameID)
 	log.Debug("Retrieving schema for game")
-	schema, err := d.cache.GetSchemaForGame(ctx, gameID)
+	schema, err := d.steam.GetSchemaForGame(ctx, gameID)
 	if err != nil {
 		return Achievements{}, fmt.Errorf("unable to retrieve game schema: %w", err)
 	} else if len(schema.Game.AvailableGameStats.Achievements) == 0 {
@@ -182,14 +184,14 @@ func (d *Data) GetAchievements(ctx context.Context, userID string, gameID uint64
 	}
 
 	log.Debug("Retrieving global achievement percentages")
-	globalAchievements, err := d.cache.GetGlobalAchievementPercentagesForApp(ctx, gameID)
+	globalAchievements, err := d.steam.GetGlobalAchievementPercentagesForApp(ctx, gameID)
 	if err != nil {
 		log.Warn("Unable to get achievements for game. Assuming no achievements and skipping.", "err", err)
 		return Achievements{}, nil
 	}
 
 	log.Debug("Retrieving player achievements for game")
-	playerAchievements, err := d.cache.GetPlayerAchievements(ctx, userID, gameID)
+	playerAchievements, err := d.steam.GetPlayerAchievements(ctx, userID, gameID)
 	if err != nil {
 		log.Warn("Unable to get player achievements for game. Leaving empty.", "err", err)
 		playerAchievements = &steam.PlayerAchievements{
@@ -249,7 +251,7 @@ func (d *Data) GetAchievements(ctx context.Context, userID string, gameID uint64
 
 func (d *Data) ResolveVanityURL(ctx context.Context, vanityURL string) (string, error) {
 	slog.Debug("Resolving vanity URL", "name", vanityURL)
-	vanity, err := d.cache.ResolveVanityURL(ctx, vanityURL)
+	vanity, err := d.steam.ResolveVanityURL(ctx, vanityURL)
 	if err != nil {
 		return "", fmt.Errorf("could not resolve vanity URL for player %q games: %w", vanityURL, err)
 	}

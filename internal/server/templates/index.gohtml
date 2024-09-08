@@ -1,7 +1,15 @@
 {{ template "header.gohtml" . }}
 
-<div id="app" class="container">
-    {{ template "index-body.gohtml" . }}
+<h1>Getting Started</h1>
+
+<p>Hello! The Achievement Report is a webapp for tracking the progress of achievements in games. It can be used to inspect and examine the achievements, trophies, etc of various game networks in a single view.</p>
+
+<div class="card text-bg-dark mb-3">
+    <div class="card-body">
+        <p>No user is currently set.</p>
+
+        <p><a href="/user/login" class="btn btn-primary">Login</a> or <a href="/user/change" class="btn btn-secondary">Lookup a User</a></p>
+    </div>
 </div>
 
 {{ template "footer.gohtml" . }}

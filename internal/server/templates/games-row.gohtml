@@ -1,8 +1,8 @@
 <td>
-    <a href="/game?user-id={{.UserID}}&game-id={{.ID}}"><img class="header" src="https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{{.ID}}/{{.Icon}}.jpg" alt="{{.DisplayName}} Logo" /></a>
+    <a href="/game/{{.ID}}{{ if .SteamID }}?steam-id={{.SteamID}}{{ end }}"><img class="header" src="https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{{.ID}}/{{.Icon}}.jpg" alt="{{.DisplayName}} Logo" /></a>
 </td>
 <td>
-    <a href="/game?user-id={{.UserID}}&game-id={{.ID}}">{{$.DisplayName}}</a>
+    <a href="/game/{{.ID}}{{ if .SteamID }}?steam-id={{.SteamID}}{{ end }}">{{$.DisplayName}}</a>
 </td>
 <td hx-trigger="load" hx-get="/hx/game/row?game-id={{.ID}}">
     <img class="htmx-indicator" src="/assets/loading.svg" />

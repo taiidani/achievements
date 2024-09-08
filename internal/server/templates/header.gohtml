@@ -36,6 +36,15 @@
             <li class="nav-item">
                 <a class="nav-link{{ if eq .Page "about"}} active" aria-current="page{{end}}" href="/about">About</a>
             </li>
+            {{ if .LoggedIn }}
+            <li class="nav-item">
+                <a class="nav-link{{ if eq .Page "user-logout"}} active" aria-current="page{{end}}" href="/user/logout">Logout</a>
+            </li>
+            {{ else }}
+            <li class="nav-item">
+                <a class="nav-link{{ if eq .Page "user-login"}} active" aria-current="page{{end}}" href="/user/login">Login</a>
+            </li>
+            {{ end }}
             <li class="nav-item">
                 <img class="htmx-indicator" src="/assets/loading.svg" />
             </li>

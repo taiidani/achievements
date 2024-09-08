@@ -13,7 +13,9 @@ import (
 )
 
 type Server struct {
-	backend *data.Data
+	backend   *data.Data
+	publicURL string
+	port      string
 	*http.Server
 }
 
@@ -31,12 +33,19 @@ func NewServer(backend *data.Data) *Server {
 		log.Fatal("Required PORT environment variable not present")
 	}
 
+	publicURL := os.Getenv("PUBLIC_URL")
+	if publicURL == "" {
+		publicURL = "http://localhost:" + port
+	}
+
 	srv := &Server{
 		Server: &http.Server{
 			Addr:    fmt.Sprintf(":%s", port),
 			Handler: mux,
 		},
-		backend: backend,
+		publicURL: publicURL,
+		port:      port,
+		backend:   backend,
 	}
 	srv.addRoutes(mux)
 
@@ -44,11 +53,15 @@ func NewServer(backend *data.Data) *Server {
 }
 
 func (s *Server) addRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/", s.indexHandler)
-	mux.HandleFunc("/game", s.gameHandler)
-	mux.HandleFunc("/about", s.aboutHandler)
-	mux.HandleFunc("/assets/*", s.assetsHandler)
-	mux.HandleFunc("/hx/game/row", s.hxGameRowHandler)
+	mux.Handle("/", s.sessionMiddleware(http.HandlerFunc(s.indexHandler)))
+	mux.Handle("/game/{id}", s.sessionMiddleware(http.HandlerFunc(s.gameHandler)))
+	mux.Handle("/about", s.sessionMiddleware(http.HandlerFunc(s.aboutHandler)))
+	mux.Handle("/assets/*", http.HandlerFunc(s.assetsHandler))
+	mux.Handle("/hx/game/row", s.sessionMiddleware(http.HandlerFunc(s.hxGameRowHandler)))
+	mux.Handle("/user/login", s.sessionMiddleware(http.HandlerFunc(s.userLoginHandler)))
+	mux.Handle("/user/login/steam", s.sessionMiddleware(http.HandlerFunc(s.userLoginSteamHandler)))
+	mux.Handle("/user/change", s.sessionMiddleware(http.HandlerFunc(s.userChangeHandler)))
+	mux.Handle("/user/logout", http.HandlerFunc(s.userLogoutHandler))
 }
 
 func renderHtml(writer http.ResponseWriter, code int, file string, data any) {
@@ -75,7 +88,23 @@ func renderHtml(writer http.ResponseWriter, code int, file string, data any) {
 }
 
 type baseBag struct {
-	Page string
+	Page     string
+	LoggedIn bool
+	SteamID  string
+}
+
+func newBag(r *http.Request, pageName string) baseBag {
+	ret := baseBag{}
+	ret.Page = pageName
+	ret.LoggedIn = r.Header.Get(steamIDHeaderKey) != ""
+
+	// Prioritize the query parameter over the session ID
+	ret.SteamID = r.FormValue("steam-id")
+	if ret.SteamID == "" {
+		ret.SteamID = r.Header.Get(steamIDHeaderKey)
+	}
+
+	return ret
 }
 
 type errorBag struct {

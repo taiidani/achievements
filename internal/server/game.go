@@ -10,29 +10,26 @@ import (
 
 type gameBag struct {
 	baseBag
-	UserID       string
 	Game         data.Game
 	Achievements data.Achievements
 }
 
 func (s *Server) gameHandler(resp http.ResponseWriter, req *http.Request) {
-	bag := gameBag{}
-	bag.Page = "game"
-	bag.UserID = req.URL.Query().Get("user-id")
+	bag := gameBag{baseBag: newBag(req, "game")}
 
-	gameIDString := req.URL.Query().Get("game-id")
+	gameIDString := req.PathValue("id")
 	gameID, _ := strconv.ParseUint(gameIDString, 10, 64)
 
-	if bag.UserID != "" && gameID > 0 {
-		// My userID is 76561197970932835
-		game, err := s.backend.GetGame(req.Context(), bag.UserID, gameID)
+	if bag.SteamID != "" && gameID > 0 {
+		// My steamID is 76561197970932835
+		game, err := s.backend.GetGame(req.Context(), bag.SteamID, gameID)
 		if err != nil {
 			errorResponse(resp, http.StatusNotFound, err)
 			return
 		}
 		bag.Game = game
 
-		bag.Achievements, err = s.backend.GetAchievements(req.Context(), bag.UserID, gameID)
+		bag.Achievements, err = s.backend.GetAchievements(req.Context(), bag.SteamID, gameID)
 		if err != nil {
 			errorResponse(resp, http.StatusNotFound, err)
 			return

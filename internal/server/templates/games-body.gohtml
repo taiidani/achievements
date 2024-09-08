@@ -3,7 +3,7 @@
         <div class="col-md-12">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item active"><a href="/?user-id={{.UserID}}">Home</a></li>
+                    <li class="breadcrumb-item active"><a href="/?steam-id={{.SteamID}}">Home</a></li>
                 </ol>
             </nav>
         </div>
@@ -21,7 +21,7 @@
                         <h5 class="card-title"><a href="{{ .User.ProfileURL }}">{{ .User.Name }}</a></h5>
                         <p class="card-text"><strong>Last Online:</strong> {{ if .User.LastLogoff.IsZero }}Unknown{{ else }}<span>{{ .User.LastLogoff.Format "2006-01-02" }}</span>{{ end }}</p>
                         <p class="card-text">
-                            <form method="GET" action="/">
+                            <form method="GET" action="/user/change">
                                 <button type="submit" class="btn btn-primary btn-sm">Change User</button>
                             </form>
                         </p>
@@ -29,23 +29,11 @@
                 </div>
             </div>
         </div>
-        {{ else }}
-        <form method="GET" action="">
-        <div class="col-md-6">
-            <div class="input-group">
-                <label for="user-id" class="input-group-text" aria-describedby="user-id-help">Steam User ID:</label>
-                <input class="form-control" type="text" id="user-id" name="user-id" />
-                <button class="btn btn-primary" type="submit">Lookup</button>
-            </div>
-        </div>
-
-        <p id="user-id-help" class="form-text">You may specify a Steam User ID or Vanity username. Both of these may be found on your <a href="https://store.steampowered.com/account/">User Account Page</a>.</p>
-        </form>
         {{ end }}
     </div>
 
-    {{ if .UserID }}
-    <div class="row" hx-vals='{ "user-id": "{{ .UserID }}"}'>
+    {{ if .SteamID }}
+    <div class="row" hx-vals='{ "steam-id": "{{ .SteamID }}"}'>
         <div id="games" class="col-md-12">
             <h1>Games</h1>
 
@@ -62,7 +50,7 @@
                 <tbody class="table-group-divider">
                     {{ range $i, $el := .Games }}
                     <tr>
-                        {{ template "index-row.gohtml" $el }}
+                        {{ template "games-row.gohtml" $el }}
                     </tr>
                     {{ end }}
                 </tbody>
