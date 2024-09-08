@@ -15,7 +15,7 @@ type gameBag struct {
 }
 
 func (s *Server) gameHandler(resp http.ResponseWriter, req *http.Request) {
-	bag := gameBag{baseBag: newBag(req, "game")}
+	bag := gameBag{baseBag: s.newBag(req, "game")}
 
 	gameIDString := req.PathValue("id")
 	gameID, _ := strconv.ParseUint(gameIDString, 10, 64)
@@ -41,9 +41,5 @@ func (s *Server) gameHandler(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	template := "game.gohtml"
-	if req.Header.Get("HX-Request") != "" {
-		template = "game-body.gohtml"
-	}
-
 	renderHtml(resp, http.StatusOK, template, bag)
 }

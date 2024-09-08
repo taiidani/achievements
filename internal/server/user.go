@@ -15,7 +15,7 @@ type userChangeBag struct {
 }
 
 func (s *Server) userChangeHandler(w http.ResponseWriter, r *http.Request) {
-	bag := userChangeBag{baseBag: newBag(r, "change-user")}
+	bag := userChangeBag{baseBag: s.newBag(r, "change-user")}
 
 	template := "change-user.gohtml"
 	renderHtml(w, http.StatusOK, template, bag)
@@ -27,7 +27,7 @@ type userLoginBag struct {
 }
 
 func (s *Server) userLoginHandler(w http.ResponseWriter, r *http.Request) {
-	bag := userLoginBag{baseBag: newBag(r, "user-login")}
+	bag := userLoginBag{baseBag: s.newBag(r, "user-login")}
 
 	// If the user is already logged in, redirect them to the homepage
 	if bag.SteamID != "" {
@@ -52,7 +52,7 @@ type userLoginSteamBag struct {
 }
 
 func (s *Server) userLoginSteamHandler(w http.ResponseWriter, r *http.Request) {
-	bag := userLoginSteamBag{baseBag: newBag(r, "user-login-steam")}
+	bag := userLoginSteamBag{baseBag: s.newBag(r, "user-login-steam")}
 
 	// If the user is already logged in, redirect them to the homepage
 	if bag.SteamID != "" {

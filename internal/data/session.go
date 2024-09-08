@@ -6,7 +6,8 @@ import (
 )
 
 type Session struct {
-	SteamID string `json:"SteamID"`
+	Pinned  []uint64
+	SteamID string
 }
 
 const DefaultSessionExpiration = time.Hour * 24 * 90

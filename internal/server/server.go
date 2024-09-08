@@ -57,7 +57,8 @@ func (s *Server) addRoutes(mux *http.ServeMux) {
 	mux.Handle("/game/{id}", s.sessionMiddleware(http.HandlerFunc(s.gameHandler)))
 	mux.Handle("/about", s.sessionMiddleware(http.HandlerFunc(s.aboutHandler)))
 	mux.Handle("/assets/*", http.HandlerFunc(s.assetsHandler))
-	mux.Handle("/hx/game/row", s.sessionMiddleware(http.HandlerFunc(s.hxGameRowHandler)))
+	mux.Handle("/hx/game/{id}/row", s.sessionMiddleware(http.HandlerFunc(s.hxGameRowHandler)))
+	mux.Handle("/hx/game/{id}/pin", s.sessionMiddleware(http.HandlerFunc(s.hxGamePinHandler)))
 	mux.Handle("/user/login", s.sessionMiddleware(http.HandlerFunc(s.userLoginHandler)))
 	mux.Handle("/user/login/steam", s.sessionMiddleware(http.HandlerFunc(s.userLoginSteamHandler)))
 	mux.Handle("/user/change", s.sessionMiddleware(http.HandlerFunc(s.userChangeHandler)))
@@ -88,15 +89,29 @@ func renderHtml(writer http.ResponseWriter, code int, file string, data any) {
 }
 
 type baseBag struct {
-	Page     string
-	LoggedIn bool
-	SteamID  string
+	SessionKey string
+	Session    *data.Session
+	Page       string
+	LoggedIn   bool
+	SteamID    string
 }
 
-func newBag(r *http.Request, pageName string) baseBag {
+func (s *Server) newBag(r *http.Request, pageName string) baseBag {
 	ret := baseBag{}
 	ret.Page = pageName
-	ret.LoggedIn = r.Header.Get(steamIDHeaderKey) != ""
+
+	// Load the session if it exists
+	cookie, err := r.Cookie("session")
+	if err == nil {
+		ret.SessionKey = cookie.Value
+		sess, err := s.backend.GetSession(r.Context(), cookie.Value)
+		if err != nil {
+			slog.Warn("Unable to retrieve session", "key", cookie.Value, "error", err)
+		} else {
+			ret.Session = sess
+			ret.LoggedIn = true
+		}
+	}
 
 	// Prioritize the query parameter over the session ID
 	ret.SteamID = r.FormValue("steam-id")

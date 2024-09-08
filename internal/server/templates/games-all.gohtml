@@ -1,0 +1,39 @@
+{{- $steamID := .SteamID }}
+{{- $loggedIn := .LoggedIn }}
+<h1>Games</h1>
+
+<table class="table table-dark table-hover table-striped">
+    <thead>
+        <tr>
+            <th>{{/* Logo */}}</th>
+            <th>Name</th>
+            <th>Achievement Progress</th>
+            <th>Time Played</th>
+            <th>Last Played</th>
+            {{ if $loggedIn }}
+            <th>Actions</th>
+            {{ end }}
+        </tr>
+    </thead>
+
+    <tbody class="table-group-divider">
+        {{ range .Games }}
+        <tr>
+            <td>
+                <a href="/game/{{.ID}}{{ if $steamID }}?steam-id={{$steamID}}{{ end }}"><img class="header" src="https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{{.ID}}/{{.Icon}}.jpg" alt="{{.DisplayName}} Logo" /></a>
+            </td>
+            <td>
+                <a href="/game/{{.ID}}{{ if $steamID }}?steam-id={{$steamID}}{{ end }}">{{.DisplayName}}</a>
+            </td>
+            <td hx-trigger="load" hx-get="/hx/game/{{.ID}}/row">
+                <img class="htmx-indicator" src="/assets/loading.svg" />
+            </td>
+            <td title="{{ .PlaytimeForever }}">{{ printf "%.00f" .PlaytimeForever.Hours }} hours</td>
+            <td>{{ if .LastPlayed.IsZero }}Unknown{{ else }}<span title="{{ .LastPlayedSince }}">{{ .LastPlayed.Format "2006-01-02" }}</span>{{ end }}</td>
+            {{ if $loggedIn }}
+            <td><button hx-trigger="click" hx-post="/hx/game/{{.ID}}/pin" hx-target="#pinned" class="btn btn-sm">📌</button></td>
+            {{ end }}
+        </tr>
+        {{ end }}
+    </tbody>
+</table>
