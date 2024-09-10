@@ -107,16 +107,16 @@ func (s *Server) newBag(r *http.Request, pageName string) baseBag {
 		sess, err := s.backend.GetSession(r.Context(), cookie.Value)
 		if err != nil {
 			slog.Warn("Unable to retrieve session", "key", cookie.Value, "error", err)
-		} else {
+		} else if sess != nil {
 			ret.Session = sess
 			ret.LoggedIn = true
+			ret.SteamID = sess.SteamID
 		}
 	}
 
 	// Prioritize the query parameter over the session ID
-	ret.SteamID = r.FormValue("steam-id")
-	if ret.SteamID == "" {
-		ret.SteamID = r.Header.Get(steamIDHeaderKey)
+	if r.FormValue("steam-id") != "" {
+		ret.SteamID = r.FormValue("steam-id")
 	}
 
 	return ret

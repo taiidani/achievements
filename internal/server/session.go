@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -13,7 +14,7 @@ const (
 
 func (s *Server) sessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Info(r.URL.Path, "method", r.Method)
+		fmt.Printf("%s %s\n", r.Method, r.URL.Path)
 
 		// Sanitize well-known header values
 		if !DevMode {
