@@ -1,8 +1,8 @@
 {{- $steamID := .SteamID }}
-{{- $loggedIn := .LoggedIn }}
+{{- $sessionUser := .SessionUser }}
 <h1>Games</h1>
 
-<table class="table table-dark table-hover table-striped">
+<table class="striped">
     <thead>
         <tr>
             <th>{{/* Logo */}}</th>
@@ -10,13 +10,13 @@
             <th>Achievement Progress</th>
             <th>Time Played</th>
             <th>Last Played</th>
-            {{ if $loggedIn }}
+            {{ if $sessionUser }}
             <th>Actions</th>
             {{ end }}
         </tr>
     </thead>
 
-    <tbody class="table-group-divider">
+    <tbody>
         {{ range .Games }}
         <tr>
             <td>
@@ -30,8 +30,8 @@
             </td>
             <td title="{{ .PlaytimeForever }}">{{ printf "%.00f" .PlaytimeForever.Hours }} hours</td>
             <td>{{ if .LastPlayed.IsZero }}Unknown{{ else }}<span title="{{ .LastPlayedSince }}">{{ .LastPlayed.Format "2006-01-02" }}</span>{{ end }}</td>
-            {{ if $loggedIn }}
-            <td><button hx-trigger="click" hx-post="/hx/game/{{.ID}}/pin" hx-target="#pinned" class="btn btn-sm">📌</button></td>
+            {{ if $sessionUser }}
+            <td><span class="pin" hx-trigger="click" hx-post="/hx/game/{{.ID}}/pin" hx-target="#pinned">📌</span></td>
             {{ end }}
         </tr>
         {{ end }}

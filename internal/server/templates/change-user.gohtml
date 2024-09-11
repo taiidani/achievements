@@ -3,20 +3,17 @@
 <h1>Change User</h1>
 
 <p>Lookup a user to view the achievements for. If you are looking up your own user, <a href="/user/login">logging in</a> may be easier.</p>
-<div>
-    <div class="row">
-        <form method="GET" action="/">
-        <div class="col-md-6">
-            <div class="input-group">
-                <label for="steam-id" class="input-group-text" aria-describedby="steam-id-help">Steam User ID:</label>
-                <input class="form-control" type="text" id="steam-id" name="steam-id" />
-                <button class="btn btn-primary" type="submit">Lookup</button>
-            </div>
-        </div>
 
-        <p id="steam-id-help" class="form-text">You may specify a Steam User ID or Vanity username. Both of these may be found on your <a href="https://store.steampowered.com/account/">User Account Page</a>.</p>
+<div class="grid">
+    <div>
+        <form method="GET" action="/" role="search">
+            <input class="form-control" type="search" id="steam-id" name="steam-id" placeholder="Steam User ID" />
+            <button class="btn btn-primary" type="submit">Lookup</button>
         </form>
     </div>
+    <div></div>
 </div>
+
+<p id="steam-id-help" class="form-text">You may specify a Steam User ID or Vanity username. Both of these may be found on your <a href="https://store.steampowered.com/account/">User Account Page</a>.</p>
 
 {{ template "footer.gohtml" .}}

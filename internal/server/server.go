@@ -89,11 +89,11 @@ func renderHtml(writer http.ResponseWriter, code int, file string, data any) {
 }
 
 type baseBag struct {
-	SessionKey string
-	Session    *data.Session
-	Page       string
-	LoggedIn   bool
-	SteamID    string
+	SessionKey  string
+	Session     *data.Session
+	SessionUser *data.User
+	Page        string
+	SteamID     string
 }
 
 func (s *Server) newBag(r *http.Request, pageName string) baseBag {
@@ -104,13 +104,18 @@ func (s *Server) newBag(r *http.Request, pageName string) baseBag {
 	cookie, err := r.Cookie("session")
 	if err == nil {
 		ret.SessionKey = cookie.Value
+		log := slog.With("key", cookie.Value)
 		sess, err := s.backend.GetSession(r.Context(), cookie.Value)
 		if err != nil {
-			slog.Warn("Unable to retrieve session", "key", cookie.Value, "error", err)
+			log.Warn("Unable to retrieve session", "error", err)
 		} else if sess != nil {
 			ret.Session = sess
-			ret.LoggedIn = true
 			ret.SteamID = sess.SteamID
+			user, err := s.backend.GetUser(r.Context(), ret.SteamID)
+			if err != nil {
+				log.Warn("Unable to load session user", "steam-id", ret.SteamID, "error", err)
+			}
+			ret.SessionUser = &user
 		}
 	}
 

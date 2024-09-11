@@ -1,40 +1,31 @@
-{{ if .HasPinned }}
+{{ if and .HasPinned .SessionUser }}
 {{- $steamID := .SteamID }}
-{{- $loggedIn := .LoggedIn }}
+{{- $sessionUser := .SessionUser }}
 <h1>Pinned</h1>
 
-<div class="row row-cols-1 row-cols-md-2 g-4">
+<div class="pinned-grid">
     {{ range .Games }}
     {{ if .Pinned }}
-    <div class="col">
-        <div class="card text-bg-dark">
-        <a href="/game/{{.ID}}{{ if $steamID }}?steam-id={{$steamID}}{{ end }}"><img class="card-img-top" src="https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{{.ID}}/header.jpg" alt="{{.DisplayName}} Logo" />
+    <article>
+        <a href="/game/{{.ID}}{{ if $steamID }}?steam-id={{$steamID}}{{ end }}"><img src="https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{{.ID}}/header.jpg" alt="{{.DisplayName}} Logo" /></a>
+        <nav>
+            <ul>
+                <li>
+                    <h4><a href="/game/{{.ID}}{{ if $steamID }}?steam-id={{$steamID}}{{ end }}">{{.DisplayName}}</a></h4>
+                </li>
+            </ul>
+        </nav>
         <div hx-trigger="load" hx-get="/hx/game/{{.ID}}/row">
             <img class="htmx-indicator" src="/assets/loading.svg" />
         </div>
-        <div class="card-body">
-            <h5 class="card-title"><a href="/game/{{.ID}}{{ if $steamID }}?steam-id={{$steamID}}{{ end }}">{{.DisplayName}}</a></h5>
-            <table class="card-text table table-dark table-hover table-striped">
-                <thead>
-                    <tr>
-                        <th>Time Played</th>
-                        <th>Last Played</th>
-                        {{ if $loggedIn }}
-                        <th>Actions</th>
-                        {{ end }}
-                    </tr>
-                </thead>
-                <tbody class="table-group-divider">
-                    <tr>
-                        <td title="{{ .PlaytimeForever }}">{{ printf "%.00f" .PlaytimeForever.Hours }} hours</td>
-                        <td>{{ if .LastPlayed.IsZero }}Unknown{{ else }}<span title="{{ .LastPlayedSince }}">{{ .LastPlayed.Format "2006-01-02" }}</span>{{ end }}</td>
-                        <td><button hx-trigger="click" hx-delete="/hx/game/{{.ID}}/pin" hx-target="#pinned" class="btn btn-sm">❌</button></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        </div>
-    </div>
+        <footer>
+            <div class="grid">
+                <div title="{{ .PlaytimeForever }}">{{ printf "%.00f" .PlaytimeForever.Hours }} hours</div>
+                <div>{{ if .LastPlayed.IsZero }}Unknown{{ else }}<span title="{{ .LastPlayedSince }}">{{ .LastPlayed.Format "2006-01-02" }}</span>{{ end }}</div>
+                <div><span class="unpin" hx-trigger="click" hx-delete="/hx/game/{{.ID}}/pin" hx-target="#pinned">❌</span></div>
+            </div>
+        </footer>
+    </article>
     {{ end }}
     {{ end }}
 </div>
