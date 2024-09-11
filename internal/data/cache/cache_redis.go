@@ -68,7 +68,7 @@ func (c *Redis) Set(ctx context.Context, key string, val any, ttl time.Duration)
 		return err
 	}
 
-	return c.client.Set(ctx, key, req, time.Hour).Err()
+	return c.client.Set(ctx, key, req, ttl).Err()
 }
 
 func (c *Redis) Has(ctx context.Context, key string) (bool, error) {
