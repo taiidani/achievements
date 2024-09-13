@@ -14,6 +14,15 @@ body {
     color: var(--text-color);
 }
 
+a {
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
 img.htmx-indicator {
     height: 2em;
 }
@@ -28,11 +37,6 @@ img.htmx-indicator {
 
 .htmx-request.htmx-indicator {
     display: inline;
-}
-
-a {
-    color: var(--text-color);
-    text-decoration: underline;
 }
 
 body>header nav img {
@@ -52,12 +56,15 @@ body>header nav img {
 .unpin,
 .edit {
     cursor: pointer;
+}
+
+.edit:hover {
     text-decoration: none;
 }
 
 .pinned-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     grid-column-gap: 10px;
     grid-row-gap: 10px;
 }
@@ -75,6 +82,10 @@ body>header nav img {
     font-weight: lighter;
     font-style: italic;
     color: gray;
+}
+
+#games table {
+    background-color: var(--default-bg-color);
 }
 
 #games table img {
