@@ -6,12 +6,15 @@
     --bs-bg-opacity: 100%;
     --progress-bg-color: hsl(222, 21%, 12%);
     --progress-bg-filled-color: hsl(223, 18%, 23%);
+    --btn-primary-background: green;
+    --btn-primary-border: green;
 }
 
 body {
     background: repeating-conic-gradient(from 45deg, rgb(20, 20, 50) 0% 25%, rgb(50, 50, 80) 0% 50%);
     background-size: 4px 4px;
     color: var(--text-color);
+    font-size: 0.9rem;
 }
 
 a {
@@ -23,8 +26,16 @@ a:hover {
     text-decoration: underline;
 }
 
+button a:hover {
+    text-decoration: none;
+}
+
 img.htmx-indicator {
     height: 2em;
+}
+
+.nowrap {
+    text-wrap: nowrap;
 }
 
 .htmx-indicator {
@@ -69,6 +80,10 @@ body>header nav img {
     grid-row-gap: 10px;
 }
 
+.pinned-grid .unpin {
+    float: right;
+}
+
 .game img {
     max-height: 4em;
     max-width: inherit;
@@ -84,8 +99,23 @@ body>header nav img {
     color: gray;
 }
 
+button.play {
+    text-wrap: nowrap;
+}
+
+button.primary {
+    --pico-background-color: var(--btn-primary-background);
+    --pico-border-color: var(--btn-primary-border);
+    --pico-color: var(--pico-primary-inverse);
+    cursor: pointer;
+}
+
 #games table {
     background-color: var(--default-bg-color);
+}
+
+#games .bi-play-circle-fill {
+    color: green;
 }
 
 #games table img {

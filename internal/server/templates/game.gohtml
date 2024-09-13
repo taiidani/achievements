@@ -19,7 +19,26 @@
                 <img src="https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{{.Game.ID}}/header.jpg" alt="{{.Game.DisplayName}} Logo" />
                 {{ if .Achievements.Achievements }}
                 <footer>
-                    <progress value="{{ .Achievements.AchievementUnlockedCount }}" max="{{ .Achievements.AchievementTotalCount }}" />
+                    <progress title="{{ .Achievements.AchievementUnlockedCount }} / {{ .Achievements.AchievementTotalCount }}" value="{{ .Achievements.AchievementUnlockedCount }}" max="{{ .Achievements.AchievementTotalCount }}"></progress>
+                    <table>
+                        <thead>
+                            <th>Achievements Unlocked</th>
+                            <th>Total Achievements</th>
+                            <th>Time Played</th>
+                            <th>Last Played</th>
+                        </thead>
+                        <tbody>
+                            <td>{{ .Achievements.AchievementUnlockedCount }}</td>
+                            <td>{{ .Achievements.AchievementTotalCount }}</td>
+                            <td><div title="{{ .Game.PlaytimeForever }}">{{ printf "%.00f" .Game.PlaytimeForever.Hours }} hours</div></td>
+                            <td><div>{{ if .Game.LastPlayed.IsZero }}Unknown{{ else }}<span title="{{ .Game.LastPlayedSince }}">{{ .Game.LastPlayed.Format "2006-01-02" }}</span>{{ end }}</div></td>
+                        </tbody>
+                    </table>
+                    <div class="group">
+                        <button class="primary play">
+                            <a href="steam://launch/{{.Game.ID}}/Dialog"><i class="bi bi-play-circle-fill"></i> Play</a>
+                        </button>
+                    </div>
                 </footer>
                 {{ end }}
             </article>
