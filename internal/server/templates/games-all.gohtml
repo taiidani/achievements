@@ -1,4 +1,4 @@
-{{- $steamID := .SteamID }}
+{{- $steamID := .User.SteamID }}
 {{- $sessionUser := .SessionUser }}
 <h1>Games</h1>
 
@@ -6,13 +6,13 @@
     <thead>
         <tr>
             <th>{{/* Logo */}}</th>
+            {{ if $sessionUser }}
+            <th></th>
+            {{ end }}
             <th>Name</th>
             <th>Achievement Progress</th>
             <th>Time Played</th>
             <th>Last Played</th>
-            {{ if $sessionUser }}
-            <th>Actions</th>
-            {{ end }}
         </tr>
     </thead>
 
@@ -20,19 +20,19 @@
         {{ range .Games }}
         <tr>
             <td>
-                <a href="/game/{{.ID}}{{ if $steamID }}?steam-id={{$steamID}}{{ end }}"><img class="header" src="https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{{.ID}}/{{.Icon}}.jpg" alt="{{.DisplayName}} Logo" /></a>
+                <a href="/user/{{$steamID}}/game/{{.ID}}"><img class="header" src="https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{{.ID}}/{{.Icon}}.jpg" alt="{{.DisplayName}} Logo" /></a>
             </td>
+            {{ if $sessionUser }}
+            <td><span class="pin" hx-trigger="click" hx-post="/hx/user/{{$steamID}}/game/{{.ID}}/pin" hx-target="#pinned">📌</span></td>
+            {{ end }}
             <td>
-                <a href="/game/{{.ID}}{{ if $steamID }}?steam-id={{$steamID}}{{ end }}">{{.DisplayName}}</a>
+                <a href="/user/{{$steamID}}/game/{{.ID}}">{{.DisplayName}}</a>
             </td>
-            <td hx-trigger="load" hx-get="/hx/game/{{.ID}}/row">
+            <td hx-trigger="load" hx-get="/hx/user/{{$steamID}}/game/{{.ID}}/row">
                 <img class="htmx-indicator" src="/assets/loading.svg" />
             </td>
             <td title="{{ .PlaytimeForever }}">{{ printf "%.00f" .PlaytimeForever.Hours }} hours</td>
             <td>{{ if .LastPlayed.IsZero }}Unknown{{ else }}<span title="{{ .LastPlayedSince }}">{{ .LastPlayed.Format "2006-01-02" }}</span>{{ end }}</td>
-            {{ if $sessionUser }}
-            <td><span class="pin" hx-trigger="click" hx-post="/hx/game/{{.ID}}/pin" hx-target="#pinned">📌</span></td>
-            {{ end }}
         </tr>
         {{ end }}
     </tbody>

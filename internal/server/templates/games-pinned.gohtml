@@ -1,30 +1,19 @@
 {{ if and .HasPinned .SessionUser }}
 {{- $steamID := .SteamID }}
-{{- $sessionUser := .SessionUser }}
 <h1>Pinned</h1>
 
 <div class="pinned-grid">
     {{ range .Games }}
     {{ if .Pinned }}
     <article>
-        <a href="/game/{{.ID}}{{ if $steamID }}?steam-id={{$steamID}}{{ end }}"><img src="https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{{.ID}}/header.jpg" alt="{{.DisplayName}} Logo" /></a>
-        <nav>
-            <ul>
-                <li>
-                    <h4><a href="/game/{{.ID}}{{ if $steamID }}?steam-id={{$steamID}}{{ end }}">{{.DisplayName}}</a></h4>
-                </li>
-            </ul>
-        </nav>
-        <div hx-trigger="load" hx-get="/hx/game/{{.ID}}/row">
+        <a href="//user/{{$steamID}}/game/{{.ID}}"><img src="https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{{.ID}}/header.jpg" alt="{{.DisplayName}} Logo" /></a>
+        <div>
+                    <span class="unpin" hx-trigger="click" hx-delete="/hx/user/{{$steamID}}/game/{{.ID}}/pin" hx-target="#pinned">❌</span>
+                    <h4><a href="/user/{{$steamID}}/game/{{.ID}}">{{.DisplayName}}</a></h4>
+        </div>
+        <div hx-trigger="load" hx-get="/hx/user/{{$steamID}}/game/{{.ID}}/row">
             <img class="htmx-indicator" src="/assets/loading.svg" />
         </div>
-        <footer>
-            <div class="grid">
-                <div title="{{ .PlaytimeForever }}">{{ printf "%.00f" .PlaytimeForever.Hours }} hours</div>
-                <div>{{ if .LastPlayed.IsZero }}Unknown{{ else }}<span title="{{ .LastPlayedSince }}">{{ .LastPlayed.Format "2006-01-02" }}</span>{{ end }}</div>
-                <div><span class="unpin" hx-trigger="click" hx-delete="/hx/game/{{.ID}}/pin" hx-target="#pinned">❌</span></div>
-            </div>
-        </footer>
     </article>
     {{ end }}
     {{ end }}

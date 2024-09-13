@@ -12,6 +12,7 @@ import (
 
 type indexBag struct {
 	baseBag
+	SteamID   string
 	User      data.User
 	HasPinned bool
 	Games     []indexBagGame
@@ -25,30 +26,43 @@ type indexBagGame struct {
 func (s *Server) indexHandler(resp http.ResponseWriter, req *http.Request) {
 	bag := indexBag{baseBag: s.newBag(req, "home")}
 
-	// If no user has been set, display the welcome page
-	if bag.SteamID == "" {
+	// If no user is logged in
+	if bag.SessionUser == nil {
 		renderHtml(resp, http.StatusOK, "index.gohtml", bag)
 		return
 	}
 
-	// A user has been set. Gather their information!
-	// My steamID is 76561197970932835
-	user, err := s.backend.GetUser(req.Context(), bag.SteamID)
-	if err != nil {
-		// Attempt to resolve the user's vanity URL into an ID
-		bag.SteamID, err = s.backend.ResolveVanityURL(req.Context(), bag.SteamID)
-		if err != nil {
-			errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not resolve user id %q to a Steam User ID or Vanity URL: %w", bag.SteamID, err))
-			return
-		}
+	bag.User = *bag.SessionUser
+	bag.SteamID = bag.User.SteamID
 
-		user, err = s.backend.GetUser(req.Context(), bag.SteamID)
-		if err != nil {
-			errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not get user data for %q: %w", bag.SteamID, err))
-			return
-		}
+	var err error
+	bag.Games, bag.HasPinned, err = s.loadGamesList(req.Context(), bag.User.SteamID, bag.baseBag)
+	if err != nil {
+		errorResponse(resp, http.StatusNotFound, err)
+		return
+	}
+
+	template := "games.gohtml"
+	renderHtml(resp, http.StatusOK, template, bag)
+}
+
+func (s *Server) gamesHandler(resp http.ResponseWriter, req *http.Request) {
+	bag := indexBag{baseBag: s.newBag(req, "home")}
+
+	steamID := req.PathValue("steamid")
+	if len(steamID) == 0 {
+		errorResponse(resp, http.StatusBadRequest, fmt.Errorf("user ID is required"))
+		return
+	}
+
+	// A user has been set. Gather their information!
+	user, err := s.backend.GetUser(req.Context(), steamID)
+	if err != nil {
+		errorResponse(resp, http.StatusNotFound, fmt.Errorf("could not get user data for %q: %w", steamID, err))
+		return
 	}
 	bag.User = user
+	bag.SteamID = bag.User.SteamID
 
 	bag.Games, bag.HasPinned, err = s.loadGamesList(req.Context(), user.SteamID, bag.baseBag)
 	if err != nil {

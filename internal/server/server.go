@@ -54,15 +54,17 @@ func NewServer(backend *data.Data) *Server {
 
 func (s *Server) addRoutes(mux *http.ServeMux) {
 	mux.Handle("/", s.sessionMiddleware(http.HandlerFunc(s.indexHandler)))
-	mux.Handle("/game/{id}", s.sessionMiddleware(http.HandlerFunc(s.gameHandler)))
 	mux.Handle("/about", s.sessionMiddleware(http.HandlerFunc(s.aboutHandler)))
 	mux.Handle("/assets/*", http.HandlerFunc(s.assetsHandler))
-	mux.Handle("/hx/game/{id}/row", s.sessionMiddleware(http.HandlerFunc(s.hxGameRowHandler)))
-	mux.Handle("/hx/game/{id}/pin", s.sessionMiddleware(http.HandlerFunc(s.hxGamePinHandler)))
+	mux.Handle("/hx/user/{steamid}/game/{gameid}/row", s.sessionMiddleware(http.HandlerFunc(s.hxGameRowHandler)))
+	mux.Handle("/hx/user/{steamid}/game/{gameid}/pin", s.sessionMiddleware(http.HandlerFunc(s.hxGamePinHandler)))
+	mux.Handle("/user/{steamid}/games", s.sessionMiddleware(http.HandlerFunc(s.gamesHandler)))
+	mux.Handle("/user/{steamid}/game/{gameid}", s.sessionMiddleware(http.HandlerFunc(s.gameHandler)))
 	mux.Handle("/user/login", s.sessionMiddleware(http.HandlerFunc(s.userLoginHandler)))
 	mux.Handle("/user/login/steam", s.sessionMiddleware(http.HandlerFunc(s.userLoginSteamHandler)))
 	mux.Handle("/user/change", s.sessionMiddleware(http.HandlerFunc(s.userChangeHandler)))
 	mux.Handle("/user/logout", http.HandlerFunc(s.userLogoutHandler))
+	mux.Handle("/user/lookup", http.HandlerFunc(s.userLookupHandler))
 }
 
 func renderHtml(writer http.ResponseWriter, code int, file string, data any) {
@@ -93,7 +95,6 @@ type baseBag struct {
 	Session     *data.Session
 	SessionUser *data.User
 	Page        string
-	SteamID     string
 }
 
 func (s *Server) newBag(r *http.Request, pageName string) baseBag {
@@ -110,18 +111,12 @@ func (s *Server) newBag(r *http.Request, pageName string) baseBag {
 			log.Warn("Unable to retrieve session", "error", err)
 		} else if sess != nil {
 			ret.Session = sess
-			ret.SteamID = sess.SteamID
-			user, err := s.backend.GetUser(r.Context(), ret.SteamID)
+			user, err := s.backend.GetUser(r.Context(), sess.SteamID)
 			if err != nil {
-				log.Warn("Unable to load session user", "steam-id", ret.SteamID, "error", err)
+				log.Warn("Unable to load session user", "steam-id", sess.SteamID, "error", err)
 			}
 			ret.SessionUser = &user
 		}
-	}
-
-	// Prioritize the query parameter over the session ID
-	if r.FormValue("steam-id") != "" {
-		ret.SteamID = r.FormValue("steam-id")
 	}
 
 	return ret

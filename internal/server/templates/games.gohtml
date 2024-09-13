@@ -16,8 +16,8 @@
     </section>
     {{ end }}
 
-    {{ if .SteamID }}
-    <div hx-vals='{ "steam-id": "{{ .SteamID }}"}'>
+    {{ if .User.SteamID }}
+    <div>
         <section id="pinned" class="col-md-12">
             {{ template "games-pinned.gohtml" .}}
         </section>

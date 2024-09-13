@@ -1,5 +1,5 @@
 {{ if eq .Achievements.AchievementUnlockedPercentage 100 }}
 🏆
 {{ else }}
-<progress value="{{ .Achievements.AchievementUnlockedCount }}" max="{{ .Achievements.AchievementTotalCount }}" />
+<progress title="{{ .Achievements.AchievementUnlockedCount }} / {{ .Achievements.AchievementTotalCount }}" value="{{ .Achievements.AchievementUnlockedCount }}" max="{{ .Achievements.AchievementTotalCount }}" />
 {{end}}

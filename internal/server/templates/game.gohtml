@@ -4,8 +4,8 @@
     <section>
         <nav aria-label="breadcrumb">
             <ul>
-                <li><a href="/?steam-id={{.SteamID}}">Home</a></li>
-                <li>Game</li>
+                <li><a href="/user/{{.SteamID}}/games">Games</a></li>
+                <li>{{.Game.DisplayName}}</li>
             </ul>
         </nav>
     </section>

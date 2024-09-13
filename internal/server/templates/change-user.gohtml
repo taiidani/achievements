@@ -1,12 +1,12 @@
 {{ template "header.gohtml" .}}
 
-<h1>Change User</h1>
+<h1>Lookup User</h1>
 
 <p>Lookup a user to view the achievements for. If you are looking up your own user, <a href="/user/login">logging in</a> may be easier.</p>
 
 <div class="grid">
     <div>
-        <form method="GET" action="/" role="search">
+        <form method="GET" action="/user/lookup" role="search">
             <input class="form-control" type="search" id="steam-id" name="steam-id" placeholder="Steam User ID" />
             <button class="btn btn-primary" type="submit">Lookup</button>
         </form>

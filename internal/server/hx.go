@@ -18,15 +18,20 @@ type hxGameRowBag struct {
 func (s *Server) hxGameRowHandler(w http.ResponseWriter, r *http.Request) {
 	bag := hxGameRowBag{baseBag: s.newBag(r, "")}
 
-	gameIDString := r.PathValue("id")
-	bag.GameID, _ = strconv.ParseUint(gameIDString, 10, 64)
-
-	if bag.SteamID == "" {
+	steamID := r.PathValue("steamid")
+	if len(steamID) == 0 {
 		errorResponse(w, http.StatusBadRequest, fmt.Errorf("user ID is required"))
 		return
 	}
 
-	achievements, err := s.backend.GetAchievements(r.Context(), bag.SteamID, bag.GameID)
+	gameIDString := r.PathValue("gameid")
+	bag.GameID, _ = strconv.ParseUint(gameIDString, 10, 64)
+	if bag.GameID == 0 {
+		errorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid Game ID provided"))
+		return
+	}
+
+	achievements, err := s.backend.GetAchievements(r.Context(), steamID, bag.GameID)
 	if err != nil {
 		errorResponse(w, http.StatusNotFound, err)
 		return
@@ -38,15 +43,22 @@ func (s *Server) hxGameRowHandler(w http.ResponseWriter, r *http.Request) {
 
 type hxGamePinBag struct {
 	baseBag
+	SteamID   string
 	HasPinned bool
 	Games     []indexBagGame
 }
 
 func (s *Server) hxGamePinHandler(w http.ResponseWriter, r *http.Request) {
 	bag := hxGamePinBag{baseBag: s.newBag(r, "")}
-	gameIDString := r.PathValue("id")
-	gameID, _ := strconv.ParseUint(gameIDString, 10, 64)
 
+	bag.SteamID = r.PathValue("steamid")
+	if len(bag.SteamID) == 0 {
+		errorResponse(w, http.StatusBadRequest, fmt.Errorf("user ID is required"))
+		return
+	}
+
+	gameIDString := r.PathValue("gameid")
+	gameID, _ := strconv.ParseUint(gameIDString, 10, 64)
 	if gameID == 0 {
 		errorResponse(w, http.StatusNotFound, fmt.Errorf("game-id required for pinning"))
 		return

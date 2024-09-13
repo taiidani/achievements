@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -30,7 +31,7 @@ func (s *Server) userLoginHandler(w http.ResponseWriter, r *http.Request) {
 	bag := userLoginBag{baseBag: s.newBag(r, "user-login")}
 
 	// If the user is already logged in, redirect them to the homepage
-	if bag.SteamID != "" {
+	if bag.SessionUser != nil {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
@@ -55,7 +56,7 @@ func (s *Server) userLoginSteamHandler(w http.ResponseWriter, r *http.Request) {
 	bag := userLoginSteamBag{baseBag: s.newBag(r, "user-login-steam")}
 
 	// If the user is already logged in, redirect them to the homepage
-	if bag.SteamID != "" {
+	if bag.SessionUser != nil {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
@@ -115,4 +116,31 @@ func (s *Server) userLogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("User logged out")
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+}
+
+func (s *Server) userLookupHandler(w http.ResponseWriter, r *http.Request) {
+	steamID := r.FormValue("steam-id")
+	if len(steamID) == 0 {
+		errorResponse(w, http.StatusBadRequest, fmt.Errorf("Invalid Steam ID provided"))
+		return
+	}
+
+	// Lookup the user, confirming their Steam ID
+	_, err := s.backend.GetUser(r.Context(), steamID)
+	if err != nil {
+		// Attempt to resolve the user's vanity URL into an ID
+		steamID, err = s.backend.ResolveVanityURL(r.Context(), steamID)
+		if err != nil {
+			errorResponse(w, http.StatusNotFound, fmt.Errorf("could not resolve user id %q to a Steam User ID or Vanity URL: %w", steamID, err))
+			return
+		}
+
+		_, err = s.backend.GetUser(r.Context(), steamID)
+		if err != nil {
+			errorResponse(w, http.StatusNotFound, fmt.Errorf("could not get user data for %q: %w", steamID, err))
+			return
+		}
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/user/%s/games", steamID), http.StatusTemporaryRedirect)
 }
