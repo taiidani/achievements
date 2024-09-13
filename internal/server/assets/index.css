@@ -9,7 +9,8 @@
 }
 
 body {
-    background-color: var(--default-bg-color);
+    background: repeating-conic-gradient(from 45deg, rgb(20, 20, 50) 0% 25%, rgb(50, 50, 80) 0% 50%);
+    background-size: 4px 4px;
     color: var(--text-color);
 }
 
