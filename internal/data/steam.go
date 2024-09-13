@@ -3,6 +3,8 @@ package data
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/taiidani/achievements/internal/data/cache"
@@ -36,6 +38,31 @@ func (c *SteamHelper) GetGlobalAchievementPercentagesForApp(ctx context.Context,
 	}
 
 	return ret, c.cache.Set(ctx, key, ret, time.Hour*24)
+}
+
+func (c *SteamHelper) GetSchemasInCache(ctx context.Context) ([]uint64, error) {
+	gameSchemas, err := c.cache.Keys(ctx, "game:*:schema")
+	if err != nil {
+		return []uint64{}, fmt.Errorf("unable to scan cache for game schemas: %w", err)
+	}
+
+	r := regexp.MustCompile(`^game:(\d+):schema$`)
+	ret := []uint64{}
+	for _, key := range gameSchemas {
+		match := r.FindStringSubmatch(key)
+		if match == nil || len(match) < 2 {
+			return ret, fmt.Errorf("unable to match returned key against regex")
+		}
+
+		matchInt, err := strconv.ParseUint(match[1], 10, 64)
+		if err != nil {
+			return ret, fmt.Errorf("returned match %q was not a valid integer: %w", match, err)
+		}
+
+		ret = append(ret, matchInt)
+	}
+
+	return ret, nil
 }
 
 func (c *SteamHelper) GetSchemaForGame(ctx context.Context, appID uint64) (*steam.GameSchema, error) {

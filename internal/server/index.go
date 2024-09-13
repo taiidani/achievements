@@ -70,6 +70,12 @@ func (s *Server) loadGamesList(ctx context.Context, steamID string, bag baseBag)
 	}
 
 	for _, game := range games {
+		if ok, err := s.backend.HasAchievements(ctx, game.ID); err != nil {
+			return ret, false, fmt.Errorf("could not retrieve achievements: %w", err)
+		} else if !ok {
+			continue
+		}
+
 		bagGame := indexBagGame{
 			Game:   game,
 			Pinned: bag.Session != nil && slices.Contains(bag.Session.Pinned, game.ID),

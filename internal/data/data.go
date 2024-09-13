@@ -172,6 +172,15 @@ func (d *Data) populateGamePlaytime(game *Game, steamGame *steam.OwnedGame) erro
 	return nil
 }
 
+func (d *Data) HasAchievements(ctx context.Context, gameID uint64) (bool, error) {
+	schema, err := d.steam.GetSchemaForGame(ctx, gameID)
+	if err != nil {
+		return false, fmt.Errorf("unable to retrieve game schema: %w", err)
+	}
+
+	return len(schema.Game.AvailableGameStats.Achievements) > 0, nil
+}
+
 func (d *Data) GetAchievements(ctx context.Context, userID string, gameID uint64) (Achievements, error) {
 	log := slog.With("game-id", gameID)
 	log.Debug("Retrieving schema for game")
