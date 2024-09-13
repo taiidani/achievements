@@ -10,19 +10,12 @@ import (
 	"github.com/taiidani/achievements/internal/steam"
 )
 
-// refresherData contains a list of UserIDs to regularly refresh.
-var refresherData = []string{
-	// taiidani
-	"76561197970932835",
-}
-
 func Refresher(ctx context.Context, client *steam.Client, cache cache.Cache) {
 	tick := time.NewTicker(time.Hour * 24)
 
-	for _, userID := range refresherData {
-		if err := refreshData(ctx, client, cache, userID); err != nil {
-			slog.Error("Failed to refresh data", "error", err)
-		}
+	err := refreshData(ctx, client, cache)
+	if err != nil {
+		slog.Error("refresh cycle errored", "error", err)
 	}
 
 	for {
@@ -31,35 +24,34 @@ func Refresher(ctx context.Context, client *steam.Client, cache cache.Cache) {
 			slog.Info("Data refresher exited")
 			return
 		case <-tick.C:
-			for _, userID := range refresherData {
-				if err := refreshData(ctx, client, cache, userID); err != nil {
-					slog.Error("Failed to refresh data", "error", err)
-				}
+			err = refreshData(ctx, client, cache)
+			if err != nil {
+				slog.Error("refresh cycle errored", "error", err)
 			}
 		}
 	}
 }
 
-func refreshData(ctx context.Context, client *steam.Client, cache cache.Cache, userID string) error {
-	log := slog.With("steam-id", userID)
-	d := NewData(client, cache)
+func refreshData(ctx context.Context, client *steam.Client, cache cache.Cache) error {
+	slog.Info("Refreshing data")
 
-	log.Info("Refreshing data")
 	start := time.Now()
 	defer func() {
-		log.Info("Refresh complete", "duration", time.Since(start))
+		slog.Info("Refresh complete", "duration", time.Since(start))
 	}()
 
-	log.Debug("Retrieving user owned games")
-	steamGames, err := d.steam.GetPlayerOwnedGames(ctx, userID)
+	d := NewData(client, cache)
+
+	appIDs, err := d.steam.GetSchemasInCache(ctx)
 	if err != nil {
-		return fmt.Errorf("could not query for player %q games: %w", userID, err)
+		return fmt.Errorf("unable to get schemas in cache: %w", err)
 	}
 
-	for _, steamGame := range steamGames.Response.Games {
-		_, err := d.GetGame(ctx, userID, steamGame.AppID)
+	for _, appID := range appIDs {
+		// We don't need the data itself; we're just refreshing its cache
+		_, err := client.ISteamUserStats.GetSchemaForGame(ctx, appID)
 		if err != nil {
-			return fmt.Errorf("could not refresh data for game %q: %w", steamGame.AppID, err)
+			slog.Warn("Failed to get schema for game", "appID", appID, "error", err)
 		}
 	}
 
