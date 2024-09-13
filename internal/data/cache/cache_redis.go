@@ -79,3 +79,12 @@ func (c *Redis) Has(ctx context.Context, key string) (bool, error) {
 
 	return resp.Val() > 0, nil
 }
+
+func (c *Redis) Keys(ctx context.Context, pattern string) ([]string, error) {
+	resp := c.client.Keys(ctx, pattern)
+	if resp.Err() != nil {
+		return []string{}, resp.Err()
+	}
+
+	return resp.Val(), nil
+}

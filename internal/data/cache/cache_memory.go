@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -62,4 +63,32 @@ func (c *Memory) Set(ctx context.Context, key string, val any, ttl time.Duration
 func (c *Memory) Has(ctx context.Context, key string) (bool, error) {
 	_, ok := c.data[key]
 	return ok, nil
+}
+
+// Keys will return the set of keys in the cache matching the given "*" based pattern.
+// WARNING: This implementation only supports a single wildcard.
+func (c *Memory) Keys(ctx context.Context, pattern string) ([]string, error) {
+	patterns := strings.Split(pattern, "*")
+	if len(patterns) == 1 {
+		// Special case: no wildcards exist
+		if _, found := c.data[pattern]; found {
+			return []string{pattern}, nil
+		}
+	} else if len(patterns) > 2 {
+		return []string{}, fmt.Errorf("the memory cache does not support multiple wildcards")
+	}
+
+	ret := []string{}
+	for key := range c.data {
+		if !strings.HasPrefix(key, patterns[0]) {
+			continue
+		}
+		if !strings.HasSuffix(key, patterns[1]) {
+			continue
+		}
+
+		ret = append(ret, key)
+	}
+
+	return ret, nil
 }
