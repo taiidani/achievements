@@ -13,6 +13,21 @@ body {
     color: var(--text-color);
 }
 
+body>header,
+body>footer {
+    background-color: rgba(var(--bs-tertiary-bg-rgb), var(--bs-bg-opacity));
+    color: var(--bs-body-color);
+}
+
+a {
+    color: var(--text-color);
+    text-decoration: underline;
+}
+
+body>header nav img {
+    height: 1.5em;
+}
+
 img.htmx-indicator {
     height: 2em;
 }
@@ -29,15 +44,6 @@ img.htmx-indicator {
     display: inline;
 }
 
-a {
-    color: var(--text-color);
-    text-decoration: underline;
-}
-
-body>header nav img {
-    height: 1.5em;
-}
-
 .user-card {
     background-color: var(--pico-card-background-color);
     padding: 0 var(--pico-block-spacing-horizontal);
@@ -45,6 +51,16 @@ body>header nav img {
 
 .user-card img {
     height: 2rem;
+}
+
+.pinned {
+    position: relative;
+}
+
+.pinned .unpin {
+    position: absolute;
+    right: 0;
+    top: -5px;
 }
 
 .pin,
@@ -59,6 +75,11 @@ body>header nav img {
     grid-template-columns: repeat(2, 1fr);
     grid-column-gap: 10px;
     grid-row-gap: 10px;
+}
+
+#games table img {
+    max-width: 32px;
+    max-height: 32px;
 }
 
 .game img {
@@ -76,19 +97,7 @@ body>header nav img {
     color: gray;
 }
 
-#games table img {
-    max-width: 32px;
-    max-height: 32px;
-}
-
 /* Revert the Bootstrap table color, allowing the per-element gradient to come through */
 .game table tr td {
     background-color: inherit;
-}
-
-
-body>header,
-body>footer {
-    background-color: rgba(var(--bs-tertiary-bg-rgb), var(--bs-bg-opacity));
-    color: var(--bs-body-color);
 }
