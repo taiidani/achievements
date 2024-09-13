@@ -14,7 +14,14 @@ To run the app locally, you will need:
 * (Optional) [Mise](https://mise.jdx.dev/) for setting env vars and dependencies.
 * (Optional) [Docker and Docker Compose](https://docs.docker.com/desktop/), for running Redis.
 
-The below examples will assume that you have Mise installed. Mise is used to load the `.env` file [automatically](.mise.toml), but any method of managing of these environment variables will also work.
+### Mise
+
+The Mise CLI tool is being used for dependency management and environment variable distribution in this repository. The below examples will assume that you have Mise installed. Mise is used to load the `.env` file [automatically](.mise.toml), but any method of managing of these environment variables will also work.
+
+
+ If you do not have or want Mise set up you can still set your environment up manually.
+
+The `.env` file being set up in the below sections is normally exported to your shell automatically, but you can instead export these manually with `export KEY="value"`.
 
 ### Running Locally
 
