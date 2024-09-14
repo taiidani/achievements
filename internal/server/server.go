@@ -55,7 +55,7 @@ func NewServer(backend *data.Data) *Server {
 func (s *Server) addRoutes(mux *http.ServeMux) {
 	mux.Handle("/", s.sessionMiddleware(http.HandlerFunc(s.indexHandler)))
 	mux.Handle("/about", s.sessionMiddleware(http.HandlerFunc(s.aboutHandler)))
-	mux.Handle("/assets/*", http.HandlerFunc(s.assetsHandler))
+	mux.Handle("/assets/", http.HandlerFunc(s.assetsHandler))
 	mux.Handle("/hx/user/{steamid}/game/{gameid}/row", s.sessionMiddleware(http.HandlerFunc(s.hxGameRowHandler)))
 	mux.Handle("/hx/user/{steamid}/game/{gameid}/pin", s.sessionMiddleware(http.HandlerFunc(s.hxGamePinHandler)))
 	mux.Handle("/user/{steamid}/games", s.sessionMiddleware(http.HandlerFunc(s.gamesHandler)))

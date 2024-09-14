@@ -3,4 +3,4 @@
 _.file = ".env"
 
 [tools]
-go = "latest"
+go = "1.23.1"
