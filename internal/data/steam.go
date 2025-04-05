@@ -50,7 +50,7 @@ func (c *SteamHelper) GetSchemasInCache(ctx context.Context) ([]uint64, error) {
 	ret := []uint64{}
 	for _, key := range gameSchemas {
 		match := r.FindStringSubmatch(key)
-		if match == nil || len(match) < 2 {
+		if len(match) < 2 {
 			return ret, fmt.Errorf("unable to match returned key against regex")
 		}
 
