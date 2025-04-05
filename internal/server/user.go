@@ -121,7 +121,7 @@ func (s *Server) userLogoutHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) userLookupHandler(w http.ResponseWriter, r *http.Request) {
 	steamID := r.FormValue("steam-id")
 	if len(steamID) == 0 {
-		errorResponse(w, http.StatusBadRequest, fmt.Errorf("Invalid Steam ID provided"))
+		errorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid Steam ID provided"))
 		return
 	}
 

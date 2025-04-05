@@ -25,18 +25,14 @@ jobs:
       - name: Build
         run: go build -o app
 
-  go-lint:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
+      - uses: jdx/mise-action@v2
 
       - name: Vet
         run: go vet ./...
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+      - name: Staticcheck
+        run: staticcheck ./...
