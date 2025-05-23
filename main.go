@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/taiidani/achievements/internal/data"
-	"github.com/taiidani/achievements/internal/data/cache"
 	"github.com/taiidani/achievements/internal/server"
 	"github.com/taiidani/achievements/internal/steam"
+	"github.com/taiidani/go-lib/cache"
 )
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 
 func setupCache() (cache.Cache, error) {
 	if addr, ok := os.LookupEnv("REDIS_ADDR"); ok {
-		return cache.NewRedis(addr), nil
+		return cache.NewRedis(addr, "achievements:")
 	} else if host, ok := os.LookupEnv("REDIS_HOST"); ok {
 		db := 0
 		if dbParsed, err := strconv.ParseInt(os.Getenv("REDIS_DB"), 10, 64); err == nil {
@@ -52,7 +52,7 @@ func setupCache() (cache.Cache, error) {
 		user := os.Getenv("REDIS_USER")
 		pass := os.Getenv("REDIS_PASSWORD")
 
-		return cache.NewRedisSecureCache(host, port, user, pass, db), nil
+		return cache.NewRedisSecureCache(host, port, user, pass, db, "achievements:")
 	}
 
 	slog.Warn("No REDIS_ADDR or REDIS_HOST env var set. Falling back upon in-memory store")
@@ -61,7 +61,7 @@ func setupCache() (cache.Cache, error) {
 
 func serve(ctx context.Context, client *steam.Client, cache cache.Cache) error {
 	backend := data.NewData(client, cache)
-	srv := server.NewServer(backend)
+	srv := server.NewServer(backend, cache)
 
 	go func() {
 		slog.Info("Server starting", "dev", server.DevMode)

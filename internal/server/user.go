@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/taiidani/achievements/internal/data"
+	"github.com/taiidani/achievements/internal/models"
 	"github.com/taiidani/achievements/internal/steam"
 )
 
@@ -57,6 +57,7 @@ func (s *Server) userLoginSteamHandler(w http.ResponseWriter, r *http.Request) {
 
 	// If the user is already logged in, redirect them to the homepage
 	if bag.SessionUser != nil {
+		slog.Warn("User already signed in; redirecting")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
@@ -64,6 +65,7 @@ func (s *Server) userLoginSteamHandler(w http.ResponseWriter, r *http.Request) {
 	// Confirm that the request was completed and signed by Steam
 	params := r.URL.Query()
 	if !params.Has("openid.sig") {
+		slog.Warn("Sign in failed due to missing OpenID signature")
 		http.Error(w, "Request must be signed", http.StatusBadRequest)
 		return
 	}
@@ -72,6 +74,7 @@ func (s *Server) userLoginSteamHandler(w http.ResponseWriter, r *http.Request) {
 	oauth := steam.NewOpenIDClient()
 	err := oauth.Validate(params)
 	if err != nil {
+		slog.Warn("Sign in failed due to invalid OAuth signature")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -82,27 +85,20 @@ func (s *Server) userLoginSteamHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	slog.Info("Signed in with Steam", "steamid", steamID)
 
 	// Now build the session and set the cookie
-	sess := data.Session{
+	sess := models.Session{
 		SteamID: steamID,
 	}
-	sessionKey := s.buildSessionKey()
-	err = s.backend.SetSession(r.Context(), sessionKey, sess)
+
+	cookie, err := s.session.Create(r.Context(), sess)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	cookie := http.Cookie{
-		Name:     "session",
-		Value:    sessionKey,
-		Secure:   !DevMode,
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   int(data.DefaultSessionExpiration.Seconds()),
-	}
-	http.SetCookie(w, &cookie)
+	http.SetCookie(w, cookie)
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 

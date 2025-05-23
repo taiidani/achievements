@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/taiidani/achievements/internal/data/cache"
 	"github.com/taiidani/achievements/internal/steam"
+	"github.com/taiidani/go-lib/cache"
 )
 
 func Refresher(ctx context.Context, client *steam.Client, cache cache.Cache) {

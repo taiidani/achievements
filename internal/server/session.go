@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/google/uuid"
+	"github.com/taiidani/achievements/internal/models"
 )
 
 const (
@@ -22,21 +22,14 @@ func (s *Server) sessionMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Is the user ID in the session?
-		cookie, err := r.Cookie("session")
-		if err == nil {
-			sess, err := s.backend.GetSession(r.Context(), cookie.Value)
-			if err != nil {
-				slog.Warn("Unable to retrieve session", "key", cookie.Value, "error", err)
-			} else if sess != nil {
-				r.Header.Add(steamIDHeaderKey, sess.SteamID)
-			}
+		sess := models.Session{}
+		err := s.session.Get(r, &sess)
+		if err != nil {
+			slog.Warn("Unable to retrieve session", "error", err)
+		} else {
+			r.Header.Add(steamIDHeaderKey, sess.SteamID)
 		}
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func (s *Server) buildSessionKey() string {
-	key := uuid.New()
-	return key.String()
 }

@@ -68,12 +68,12 @@ func (s *Server) hxGamePinHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		if !slices.Contains(bag.Session.Pinned, gameID) {
 			bag.Session.Pinned = append(bag.Session.Pinned, gameID)
-			_ = s.backend.SetSession(r.Context(), bag.SessionKey, *bag.Session)
+			_ = s.session.Update(r, *bag.Session)
 		}
 	case http.MethodDelete:
 		if ix := slices.Index(bag.Session.Pinned, gameID); ix >= 0 {
 			bag.Session.Pinned = slices.Delete(bag.Session.Pinned, ix, ix+1)
-			_ = s.backend.SetSession(r.Context(), bag.SessionKey, *bag.Session)
+			_ = s.session.Update(r, *bag.Session)
 		}
 	}
 

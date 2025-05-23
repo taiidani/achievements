@@ -1,7 +1,41 @@
 [env]
 # Place a STEAM_KEY into this file
 _.file = ".env"
+PORT = "3000"
+DEV = "true"
 
 [tools]
-go = "1.23.1"
+go = "1.24"
 staticcheck = "latest"
+
+[tasks.default]
+description = "Execute the app in development mode"
+depends = ["build", "docker"]
+depends_post = ["clean"]
+run = [
+    "REDIS_ADDR=$(docker compose port redis 6379) DATABASE_URL=postgresql://postgres:root@$(docker compose port postgres 5432)/postgres ./app",
+]
+
+[tasks.build]
+description = "Build the server binary"
+env.CGO_ENABLED = "0"
+depends = ["test", "lint"]
+run = ["go build -o app main.go"]
+
+[tasks.docker]
+run = ["docker compose up -d --wait"]
+
+[tasks.clean]
+run = ["docker compose down", "rm -f app"]
+
+[tasks.test]
+description = "Run the unit test suite"
+env.CGO_ENABLED = 1                                    # Required for -race
+run = ["go test -race -covermode=atomic -cover ./..."]
+
+[tasks.integration_test]
+description = "Run the integration test suite"
+run = ["go test --tags='integration' ./..."]
+
+[tasks.lint]
+run = ["go vet ./...", "staticcheck ./..."]

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"html/template"
@@ -10,10 +11,14 @@ import (
 	"os"
 
 	"github.com/taiidani/achievements/internal/data"
+	"github.com/taiidani/achievements/internal/models"
+	"github.com/taiidani/go-lib/authz"
+	"github.com/taiidani/go-lib/cache"
 )
 
 type Server struct {
 	backend   *data.Data
+	session   authz.Session
 	publicURL string
 	port      string
 	*http.Server
@@ -25,7 +30,7 @@ var templates embed.FS
 // DevMode can be toggled to pull rendered files from the filesystem or the embedded FS.
 var DevMode = os.Getenv("DEV") == "true"
 
-func NewServer(backend *data.Data) *Server {
+func NewServer(backend *data.Data, cache cache.Cache) *Server {
 	mux := http.NewServeMux()
 
 	port := os.Getenv("PORT")
@@ -38,6 +43,9 @@ func NewServer(backend *data.Data) *Server {
 		publicURL = "http://localhost:" + port
 	}
 
+	session := authz.NewSession(context.Background(), cache)
+	session.Secure = !DevMode
+
 	srv := &Server{
 		Server: &http.Server{
 			Addr:    fmt.Sprintf(":%s", port),
@@ -46,6 +54,7 @@ func NewServer(backend *data.Data) *Server {
 		publicURL: publicURL,
 		port:      port,
 		backend:   backend,
+		session:   session,
 	}
 	srv.addRoutes(mux)
 
@@ -92,7 +101,7 @@ func renderHtml(writer http.ResponseWriter, code int, file string, data any) {
 
 type baseBag struct {
 	SessionKey  string
-	Session     *data.Session
+	Session     *models.Session
 	SessionUser *data.User
 	Page        string
 }
@@ -102,21 +111,17 @@ func (s *Server) newBag(r *http.Request, pageName string) baseBag {
 	ret.Page = pageName
 
 	// Load the session if it exists
-	cookie, err := r.Cookie("session")
-	if err == nil {
-		ret.SessionKey = cookie.Value
-		log := slog.With("key", cookie.Value)
-		sess, err := s.backend.GetSession(r.Context(), cookie.Value)
+	var sess models.Session
+	err := s.session.Get(r, &sess)
+	if err != nil {
+		slog.Warn("Unable to retrieve session", "error", err)
+	} else if sess.SteamID != "" {
+		ret.Session = &sess
+		user, err := s.backend.GetUser(r.Context(), sess.SteamID)
 		if err != nil {
-			log.Warn("Unable to retrieve session", "error", err)
-		} else if sess != nil {
-			ret.Session = sess
-			user, err := s.backend.GetUser(r.Context(), sess.SteamID)
-			if err != nil {
-				log.Warn("Unable to load session user", "steam-id", sess.SteamID, "error", err)
-			}
-			ret.SessionUser = &user
+			slog.Warn("Unable to load session user", "steam-id", sess.SteamID, "error", err)
 		}
+		ret.SessionUser = &user
 	}
 
 	return ret

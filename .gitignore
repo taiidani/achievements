@@ -1,3 +1,4 @@
 _cache
 .env
 __debug*
+app

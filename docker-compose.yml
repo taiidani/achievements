@@ -1,4 +1,14 @@
 services:
   redis:
     image: redis:6
-    ports: [ "127.0.0.1:6379:6379" ]
+    ports:
+      - target: 6379
+        host_ip: 127.0.0.1
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: "root"
+    ports:
+      - target: 5432
+        host_ip: 127.0.0.1

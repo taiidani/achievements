@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/taiidani/achievements/internal/data/cache"
 	"github.com/taiidani/achievements/internal/steam"
+	"github.com/taiidani/go-lib/cache"
 )
 
 type Data struct {
