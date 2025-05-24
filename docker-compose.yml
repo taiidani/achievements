@@ -3,6 +3,7 @@ services:
     image: redis:6
     ports:
       - target: 6379
+        published: 6379
         host_ip: 127.0.0.1
 
   postgres:
@@ -11,4 +12,5 @@ services:
       POSTGRES_PASSWORD: "root"
     ports:
       - target: 5432
+        published: 5432
         host_ip: 127.0.0.1

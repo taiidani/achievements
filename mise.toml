@@ -3,6 +3,8 @@
 _.file = ".env"
 PORT = "3000"
 DEV = "true"
+DATABASE_URL = "postgresql://postgres:root@5432/achievements"
+REDIS_ADDR = "127.0.0.1:6379"
 
 [tools]
 go = "1.24"
@@ -12,9 +14,7 @@ staticcheck = "latest"
 description = "Execute the app in development mode"
 depends = ["build", "docker"]
 depends_post = ["clean"]
-run = [
-    "REDIS_ADDR=$(docker compose port redis 6379) DATABASE_URL=postgresql://postgres:root@$(docker compose port postgres 5432)/postgres ./app",
-]
+run = ["./app"]
 
 [tasks.build]
 description = "Build the server binary"
