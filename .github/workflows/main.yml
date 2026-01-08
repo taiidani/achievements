@@ -32,7 +32,7 @@ jobs:
       - name: package
         run: tar cvzf ./${{ steps.filename.outputs.filename }} app
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: "artifact"
           path: ./${{ steps.filename.outputs.filename }}
