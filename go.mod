@@ -1,6 +1,6 @@
 module github.com/taiidani/achievements
 
-go 1.25.0
+go 1.26.0
 
 require github.com/taiidani/go-lib v0.0.0-20250523161708-0f39c152571c
 

@@ -5,9 +5,10 @@ PORT = "3000"
 DEV = "true"
 DATABASE_URL = "postgresql://postgres:root@5432/achievements"
 REDIS_ADDR = "127.0.0.1:6379"
+CGO_ENABLED = "0"
 
 [tools]
-go = "1.24"
+go = "1.26"
 staticcheck = "latest"
 
 [tasks.default]
@@ -18,7 +19,6 @@ run = ["./app"]
 
 [tasks.build]
 description = "Build the server binary"
-env.CGO_ENABLED = "0"
 depends = ["test", "lint"]
 run = ["go build -o app main.go"]
 
@@ -30,8 +30,7 @@ run = ["docker compose down", "rm -f app"]
 
 [tasks.test]
 description = "Run the unit test suite"
-env.CGO_ENABLED = 1                                    # Required for -race
-run = ["go test -race -covermode=atomic -cover ./..."]
+run = ["go test -covermode=atomic -cover ./..."]
 
 [tasks.integration_test]
 description = "Run the integration test suite"
